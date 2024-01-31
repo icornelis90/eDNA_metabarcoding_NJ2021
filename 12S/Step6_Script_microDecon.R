@@ -114,7 +114,12 @@ table_unrarefied_concatenated <- merge(table_clean_concatenated_noT, table_raw[(
 colnames(table_unrarefied_concatenated)[1] <- "ASV"
 table_unrarefied_concatenated <- table_unrarefied_concatenated %>% relocate("ASV", .before = 'DADA2')
 
+#Save Datasets
 write.xlsx(table_unrarefied_concatenated, 
            paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"), 
            sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
+
+list_of_datasets <- list("DYFS" = contaminant_DYFS, "DYFS_Field" = contaminant_DYFS_Field, 
+                         "GeoV" = contaminant_Geo, "GeoV_Field" = contaminant_Geo_Field)
+write.xlsx(list_of_datasets, paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/contaminantASVs.xlsx"), colNames = T)
 
