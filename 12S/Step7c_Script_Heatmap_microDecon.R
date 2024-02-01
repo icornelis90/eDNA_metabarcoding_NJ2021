@@ -37,15 +37,16 @@ for (opties in libraries){
 proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-UE_run2")
 
 #upload data
-table_rarefied <- readxl::read_excel(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
+table_raw <- readxl::read_excel(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 env <- readRDS(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 
 #select ASVs that are assigned to Fish
 fish_classes <- readRDS(file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
-table_FishASVs <- as.data.frame(table_rarefied[table_rarefied$Class %in% c(fish_classes),])
+table_FishASVs <- as.data.frame(table_raw[table_raw$Class %in% c(fish_classes),])
 table_FishASVs <- as.data.frame(table_FishASVs[!table_FishASVs$Species %in% c(freshwater_fish, "NA"),])
 rownames(table_FishASVs) <- table_FishASVs$ASV
+table_FishASVs[is.na(table_FishASVs)] <- 0
 
 #3: sort by species
 taxo <- "Species"

@@ -45,6 +45,8 @@ table_allAnimaliaASVs <- as.data.frame(table_all[table_all$Kingdom %in% c("Anima
 table_allAnimaliaASVs <- as.data.frame(table_allAnimaliaASVs[!table_allAnimaliaASVs$Species %in% "NA",])
 table_ChordataASVs <- as.data.frame(table_allAnimaliaASVs[table_allAnimaliaASVs$Phylum %in% "Chordata",])
 table_allAnimaliaASVs <- as.data.frame(table_allAnimaliaASVs[!table_allAnimaliaASVs$Phylum %in% "Chordata",])
+table_allAnimaliaASVs[is.na(table_allAnimaliaASVs)] <- 0
+table_ChordataASVs [is.na(table_ChordataASVs)] <- 0
 
 #3: sort by species
 taxo <- "Species"
@@ -72,7 +74,6 @@ OrderAnimalia_all <- table_allAnimalia[order(table_allAnimalia_order$Order, decr
 OrderAnimalia_all_top50 <- OrderAnimalia_all[1:50,]
 
 #Location dendro based on transformed data
-table_allAnimalia[is.na(table_allAnimalia)] <- 0
 transformed_location <- decostand(decostand(table_allAnimalia, method="tot"), method="max")
 Location_dendro <- as.dendrogram(hclust(d=dist(x = (t(transformed_location))), method = "ward.D"))
 Location_order <- order.dendrogram(Location_dendro)
@@ -83,7 +84,6 @@ par(mar = c(8, 3, 2, 2))
 plot(Location_dendro)
 
 #Animalia dendro
-OrderAnimalia_all_top50[is.na(OrderAnimalia_all_top50)] <- 0
 OrderAnimalia_all_top50_cluster <- decostand(decostand(OrderAnimalia_all_top50, method="tot"), method="max")
 Animalia_dendro_top50 <- as.dendrogram(hclust(d=dist(x = OrderAnimalia_all_top50_cluster),method = "ward.D"))
 dendro_plot_top50 <- ggdendrogram(data = Animalia_dendro_top50, rotate = T)
@@ -140,7 +140,6 @@ ggplot(data=relative_species_alllocation
 ##Chordata
 
 #Location dendro based on transformed data
-table_Chordata[is.na(table_Chordata)] <- 0
 transformed_location <- decostand(decostand(table_Chordata, method="tot"), method="max")
 Location_dendro <- as.dendrogram(hclust(d=dist(x = (t(transformed_location))), method = "ward.D"))
 Location_order <- order.dendrogram(Location_dendro)
