@@ -58,7 +58,7 @@ table_Fish <- table_Fish[!rownames(table_Fish) %in% unfound_species,]
 
 #Location dendro based on transformed data
 table_Fish[is.na(table_Fish)] <- 0
-transformed_location <- decostand(decostand(table_Fish, method="tot"), method="max")
+transformed_location <- decostand(decostand(table_Fish, method="tot", na.rm=T), method="max", na.rm=T)
 Location_dendro <- as.dendrogram(hclust(d=dist(x = (t(transformed_location))), method = "ward.D"))
 Location_order <- order.dendrogram(Location_dendro)
 label_color <- env[Location_order,]
@@ -69,7 +69,7 @@ par(mar = c(8, 3, 2, 2))
 plot(Location_dendro)
 
 #Fish dendro based on transformed data
-transformed_fish <- decostand(table_Fish, method="log")
+transformed_fish <- decostand(decostand(table_Fish, method="tot", na.rm=T), method="max", na.rm=T)
 Fish_dendro <- as.dendrogram(hclust(d=dist(x = transformed_fish), method = "ward.D"))
 dendro_plot <- ggdendrogram(data = Fish_dendro, rotate = T) + 
   theme(axis.text.y = element_text(size = 8))
