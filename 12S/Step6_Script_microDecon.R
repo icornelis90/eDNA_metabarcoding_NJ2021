@@ -41,15 +41,26 @@ env$Location <- ifelse(grepl("neg", env$Niskin.sample),
 env$Biol_replicate <- ifelse(grepl("DYF", env$Niskin.sample), 
                              sub("^([^_]+_){1}([^_]+).*", "\\2", env$Niskin.sample),
                              gsub("^.*\\_", "", env$Niskin.sample))
-env$Zones <- ifelse(env$Location %in% Coast, "Coast",
+env$Zone <- ifelse(env$Location %in% Coast, "Coast",
                    ifelse(env$Location %in% Transition, "Transition",
                           ifelse(env$Location %in% Offshore, "Offshore", "neg_control")))
 env$Environment <- ifelse(env$Location %in% Coast, "Coast",
                           ifelse(grepl("Track|WBB05|WBB06|WBB07", env$Location), "inside_OWF",
                                  ifelse(grepl("neg", env$Location), "neg_control", "outside_OWF")))
-env$Environment_color <- ifelse(env$Zone=="Coast","limegreen",
-                                ifelse(env$Zone=="Transition", "slateblue",
-                                       ifelse(env$Zone=="Offshore","darkorange","red")))
+env$Zone_color <- ifelse(env$Zone=="Coast","limegreen",
+                         ifelse(env$Zone=="Transition", "slateblue",
+                                ifelse(env$Zone=="Offshore","darkorange","red")))
+for (r in 1:nrow(env)){
+  if (env$Zone[r] == "Transition" && env$Environment[r] == "outside_OWF"){
+    env$Environment_color[r] <- "slateblue4"
+  }
+  else if (env$Zone[r] =="Offshore" && env$Environment[r] == "outside_OWF"){
+      env$Environment_color[r] <- "darkorange3"
+  }
+  else{
+    env$Environment_color[r] <- env$Zone_color[r]
+  }
+}
 env <- env[!env$Niskin.sample %in% c("ftWT2bis_1234_3", "ftWT2bis_5", "ftWT2bis_6", 
                                      "ftWT2bis_8", "ftWT2bis_9", "ft230_1_bis", "ft230_2_bis"),]
 saveRDS(env, file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_AllSamples.rds"))
@@ -61,7 +72,7 @@ table_raw_noT_order <- cbind(table_raw$ASV, table_raw_neg, table_raw_sample, tab
 colnames(table_raw_noT_order)[c(1,ncol(table_raw_noT_order))] <- c("ASV", "Taxa")
 
 #Select samples from the DYFS-campaign in September
-DYFS_samples <- c(env$Niskin.sample[which(env$Zones == "Coast" & !env$Location == "ft230")])
+DYFS_samples <- c(env$Niskin.sample[which(env$Zone == "Coast" & !env$Location == "ft230")])
 DYFS <- c(DYFS_samples, env$Niskin.sample[which(env$Location %in% c("neg_coastal", "neg_PCR"))], 
           "filter_5", "filter_6", "neg_DNA_3", "ASV", "Taxa")
 
@@ -71,7 +82,7 @@ table_DYFS_num <- table_DYFS[,2:(ncol(table_DYFS)-1)]
 remove_DYFS <- c(colnames(table_DYFS_num[colSums(table_DYFS_num) == 0]))
 table_DYFS <- table_DYFS[, !colnames(table_DYFS) %in% remove_DYFS]
 neg_DYFS <- length(c(colnames(table_DYFS[, grepl("neg", colnames(table_DYFS))])))
-Locations_DYFS <- unique(env$Location[which(env$Zones == "Coast" & !env$Location == "ft230")])
+Locations_DYFS <- unique(env$Location[which(env$Zone == "Coast" & !env$Location == "ft230")])
 numb_DYFS <- NULL
 for (i in 1:length(Locations_DYFS)){
   numb_DYFS[i] <- sum(str_count(gsub("\\_.*", "", colnames(table_DYFS_num)), paste0("\\b", Locations_DYFS[i], "\\b"))) 
@@ -93,7 +104,7 @@ decon_DYFS_Field <- as.data.frame(decontaminated_DYFS$decon.table)
 contaminant_DYFS_Field <- as.data.frame(decontaminated_DYFS$OTUs.removed)
 
 #Select samples from the GeoV-campaign in November
-Geo_samples <- c(env$Niskin.sample[which(env$Zones %in% c("Transition", "Offshore") | env$Location == "ft230")])
+Geo_samples <- c(env$Niskin.sample[which(env$Zone %in% c("Transition", "Offshore") | env$Location == "ft230")])
 Geo <- c(Geo_samples, env$Niskin.sample[which(env$Location %in% c("neg_inside_OWF", "neg_outside_OWF", "neg_PCR"))], 
          "filter_1", "filter_2", "filter_3", "filter_4", 
          "neg_DNA_1", "neg_DNA_2", "ASV", "Taxa")
@@ -107,7 +118,7 @@ table_Geo <- table_Geo[, !colnames(table_Geo) %in% remove_Geo]
 table_Geo <- table_Geo %>% relocate("ftTrack5_4_S2", .before = 'ftTrack5_4_S3')
 table_Geo <- table_Geo %>% relocate("ftWT1bis_4_S2", .before = 'ftWT1bis_4_S3')
 neg_Geo <- length(c(colnames(table_Geo[, grepl("neg", colnames(table_Geo))])))
-Locations_Geo <- unique(env$Location[which(env$Zones %in% c("Transition", "Offshore") | env$Location == "ft230")])
+Locations_Geo <- unique(env$Location[which(env$Zone %in% c("Transition", "Offshore") | env$Location == "ft230")])
 numb_Geo <- NULL
 for (i in 1:length(Locations_Geo)){
   numb_Geo[i] <- sum(str_count(gsub("\\_.*", "", colnames(table_Geo_num)), paste0("\\b", Locations_Geo[i], "\\b"))) 
@@ -139,10 +150,10 @@ table_raw_clean <- table_raw_clean %>% relocate("ASV", .before = 'DADA2')
 env_order<- env %>% 
   arrange(factor(Location, levels = c("neg_coastal", "neg_inside_OWF", "neg_outside_OWF", 
                                       "neg_filter", "neg_DNA", "neg_PCR")))
-env_order <- env_order %>% arrange(factor(Zones, levels = c("Coast", "Transition", "Offshore", "neg_control")), 
+env_order <- env_order %>% arrange(factor(Zone, levels = c("Coast", "Transition", "Offshore", "neg_control")), 
                                     Environment)
 saveRDS(env_order, file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_AllSamples.rds"))
-saveRDS(env_order[which(!env_order$Zones == "neg_control"),], file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+saveRDS(env_order[which(!env_order$Zone == "neg_control"),], file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 
 #concatenate the samples
 seqtab_raw <- as.data.frame(t(table_raw_clean[,1:(ncol(table_raw_clean)-11)]))
@@ -156,7 +167,7 @@ NumberOfASVsConcat <- as.data.frame(rowSums(seqtab_concatenated !=0)) #number of
 #write_tsv(as_tibble(NumberOfASVsConcat5, rownames="asv"), file=paste0(proj.path,"/MiFish_UE-S_concatenated/results2/NumberOfASVsPerSample_Concat_unrarefied_CleanedByNoField_05Threshold.tsv"))
 #write_tsv(as_tibble(NumberOfSequencesConcat5, rownames="samples"), file=paste0(proj.path, "/MiFish_UE-S_concatenated/results2/NumberOfSequencesPerSamples_Concat_unrarefied_CleanedByNoField_05Threshold.tsv"))
 table_clean_concatenated_noT <- as.data.frame(t(seqtab_concatenated))
-table_clean_concatenated_noT <- table_clean_concatenated_noT[, c(env_order$Niskin.sample[which(!env_order$Zones == "neg_control")])]
+table_clean_concatenated_noT <- table_clean_concatenated_noT[, c(env_order$Niskin.sample[which(!env_order$Zone == "neg_control")])]
 table_unrarefied_concatenated <- merge(table_clean_concatenated_noT, table_raw[(ncol(table_raw)-10):ncol(table_raw)],
                                        by.x = 0, by.y = "ASV", all.x = T)
 colnames(table_unrarefied_concatenated)[1] <- "ASV"
