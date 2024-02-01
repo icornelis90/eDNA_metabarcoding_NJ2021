@@ -14,192 +14,165 @@ proj.path.12S <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFi
 proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 #upload data
-table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-#table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish")
+table_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
-table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/Decontam/table_unrarefied_concatenated_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
+table_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
-env <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";")
+env_12S <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+env_COI <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
 
 #add color and pch to environmental data to create the plot 
-env$Environment_color <- ifelse(env$Zones=="Coastal","limegreen", 
-                                ifelse(env$Zones=="zone1", "slateblue", 
-                                       ifelse(env$Zones=="zone2","darkorange","red")))
-#env$Environment_color <- ifelse(env$Niskin.sample %in% c("ft230_1","ft230_2","ft230_3"),
-#                                   "red", env$Environment_color )
-env$pch <- ifelse(env$Environment=="inside_OWF","1","21")
-#env$pch <- ifelse(env$Environment=="inside_OWF","24","21")
-env$pch <- as.integer(env$pch)
-env_morph$Environment_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
+env_12S$pch <- ifelse(env_12S$Environment=="inside_OWF","1","21")
+env_12S$pch <- as.integer(env_12S$pch)
+env_COI$pch <- ifelse(env_COI$Environment=="inside_OWF","1","21")
+env_COI$pch <- as.integer(env_COI$pch)
+env_morph$Zone_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
                                       ifelse(env_morph$Zones=="zone1", "slateblue", 
                                              ifelse(env_morph$Zones=="zone2","darkorange","red")))
-#env_morph$Environment_color <- ifelse(env_morph$Niskin.sample %in% c("ft230"),
-#                                "red", env_morph$Environment_color )
 env_morph$pch <- ifelse(env_morph$Environment=="inside_OWF","1","21")
-#env$pch <- ifelse(env$Environment=="inside_OWF","24","21")
 env_morph$pch <- as.integer(env_morph$pch)
 
 #create table for morphological data
 table_morph_Fish_2 <- table_morph_Fish[,2:ncol(table_morph_Fish)]
-#rownames(table_morph_Fish_2) <- table_morph_Fish$...1
 tab_morph_Fish <- as.data.frame(t(table_morph_Fish_2))
-#tab_morph_Fish[is.na(tab_morph_Fish)] <- 0
 colnames(tab_morph_Fish) <- table_morph_Fish$...1
 tab_morph_Fish <- round(tab_morph_Fish, digits = 0)
 
 table_morph_Inv_2 <- table_morph_Inv[,2:ncol(table_morph_Inv)]
-#rownames(table_morph_Inv_2) <- table_morph_Inv$...1
 tab_morph_Inv <- as.data.frame(t(table_morph_Inv_2))
-#tab_morph_Inv[is.na(tab_morph_Inv)] <- 0
 colnames(tab_morph_Inv) <- table_morph_Inv$...1
 tab_morph_Inv <- round(tab_morph_Inv, digits = 0)
-
-#remove samples from environmental data that are absent from the unrarefied data
-keep_samples_12S <- c(colnames(table_unrarefied_12S))
-env_12S <- env[env$Niskin.sample %in% keep_samples_12S,]
-env_12S <- env_12S[!env_12S$Niskin.sample %in% ("ftWT1bis_4"),]
-colorder_12S <- c(env_12S$Niskin.sample)
-keep_samples_COI <- c(colnames(table_unrarefied_COI))
-env_COI <- env[env$Niskin.sample %in% keep_samples_COI,]
-colorder_COI <- c(env_COI$Niskin.sample)
 
 ### Fish data
 # 12S select ASVs assigned to fishes
 #select Fish species and merge by species
 fish_classes <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
-table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_12S[table_unrarefied_12S$Class %in% fish_classes,])
-table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[!table_unrarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
-#table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[,!colnames(table_unrarefied_FishASVs) %in% c("ftWT1bis_4")])
+table_FishASVs <- as.data.frame(table_12S[table_12S$Class %in% fish_classes,])
+table_FishASVs <- as.data.frame(table_FishASVs[!table_FishASVs$Species %in% c(freshwater_fish, "NA"),])
+table_FishASVs[is.na(table_FishASVs)] <- 0
 taxo <- 'Species'
-table_unrarefied_FishASVs[is.na(table_unrarefied_FishASVs)] <- 0
-merged_data_unrarefied_fish <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], 
-                                         by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
-fish_species <- c(merged_data_unrarefied_fish$Group.1)
-rownames(merged_data_unrarefied_fish) <- merged_data_unrarefied_fish$Group.1
-merged_data_unrarefied_fish$Group.1 <- NULL
-seqtab_unrarefied_FishASVs <- as.data.frame(t(merged_data_unrarefied_fish[,1:(ncol(table_unrarefied_FishASVs)-11)]))
-colnames(seqtab_unrarefied_FishASVs) <- rownames(merged_data_unrarefied_fish)
-seqtab_unrarefied_FishASVs  <- seqtab_unrarefied_FishASVs[colorder_12S,]
-#seqtab_unrarefied_FishASVs  <- seqtab_unrarefied_FishASVs[c(env_12S_samples$Niskin.sample),]
+table_Fish <- aggregate(table_FishASVs[,1:(ncol(table_FishASVs)-11)], 
+                                         by= list(as.factor(table_FishASVs[,taxo])),FUN=sum)
+fish_species <- c(table_Fish$Group.1)
+rownames(table_Fish) <- table_Fish$Group.1
+table_Fish$Group.1 <- NULL
+seqtab_Fish <- as.data.frame(t(table_Fish))
+Fish_empty <- c(rownames(seqtab_Fish[rowSums(seqtab_Fish, na.rm=T) == '0',]))
+Fish_zero <- c(colnames(seqtab_Fish[colSums(seqtab_Fish, na.rm=T) == '0']))
+seqtab_Fish <- seqtab_Fish[,!colnames(seqtab_Fish) %in% Fish_zero]
+seqtab_Fish <- seqtab_Fish[!rownames(seqtab_Fish) %in% Fish_empty,]
+env_12S <- env_12S[!env_12S$Niskin.sample %in% Fish_empty,]
 
 ### Invertebrate data
 # COI select ASVs assigned to invertebrates
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_COI[table_unrarefied_COI$Kingdom %in% c("Animalia"),])
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Full %in% "NA",])
-#table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Full %in% c("NA","Clathria prolifera"),])
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Phylum %in% "Chordata",])
-taxo <- "Full"
-remove_taxonomy <- ncol(table_unrarefied_AnimaliaASVs)-11
-merged_data_unrarefied_Animalia<-aggregate(table_unrarefied_AnimaliaASVs[,1:remove_taxonomy], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
-rownames(merged_data_unrarefied_Animalia) <- merged_data_unrarefied_Animalia$Group.1
-merged_data_unrarefied_Animalia$Group.1 <- NULL
-seqtab_unrarefied_AnimaliaASVs <- as.data.frame(t(table_unrarefied_AnimaliaASVs[,1:remove_taxonomy]))
-seqtab_unrarefied_AnimaliaASVs <- as.data.frame(t(merged_data_unrarefied_Animalia))
-seqtab_unrarefied_AnimaliaASVs  <- seqtab_unrarefied_AnimaliaASVs[colorder_COI,]
-remove_empty <- c(rownames(seqtab_unrarefied_AnimaliaASVs[rowSums(seqtab_unrarefied_AnimaliaASVs) > '0',]))
-remove_zero <- c(colnames(seqtab_unrarefied_AnimaliaASVs[,colSums(seqtab_unrarefied_AnimaliaASVs) > '0']))
-seqtab_unrarefied_AnimaliaASVs <- seqtab_unrarefied_AnimaliaASVs[,colnames(seqtab_unrarefied_AnimaliaASVs) %in% remove_zero]
-seqtab_unrarefied_AnimaliaASVs <- seqtab_unrarefied_AnimaliaASVs[rownames(seqtab_unrarefied_AnimaliaASVs) %in% remove_empty,]
-env_COI <- env_COI[env_COI$Niskin.sample %in% remove_empty,]
+table_AnimaliaASVs <- as.data.frame(table_COI[table_COI$Kingdom %in% c("Animalia"),])
+table_AnimaliaASVs <- as.data.frame(table_AnimaliaASVs[!table_AnimaliaASVs$Species %in% "NA",])
+table_AnimaliaASVs <- as.data.frame(table_AnimaliaASVs[!table_AnimaliaASVs$Phylum %in% "Chordata",])
+table_AnimaliaASVs[is.na(table_AnimaliaASVs)] <- 0
+taxo <- "Species"
+remove_taxonomy <- ncol(table_AnimaliaASVs)-11
+table_Animalia <- aggregate(table_AnimaliaASVs[,1:(ncol(table_AnimaliaASVs)-11)], by= list(as.factor(table_AnimaliaASVs[,taxo])),FUN=sum)
+rownames(table_Animalia) <- table_Animalia$Group.1
+table_Animalia$Group.1 <- NULL
+seqtab_Animalia <- as.data.frame(t(table_Animalia))
+Animalia_empty <- c(rownames(seqtab_Animalia[rowSums(seqtab_Animalia, na.rm=T) == 0,]))
+Animalia_zero  <- c(colnames(seqtab_Animalia[,colSums(seqtab_Animalia, na.rm=T) == 0]))
+seqtab_Animalia <- seqtab_Animalia[,!colnames(seqtab_Animalia) %in% Animalia_zero]
+seqtab_Animalia <- seqtab_Animalia[!rownames(seqtab_Animalia) %in% Animalia_empty,]
+
+env_COI <- env_COI[!env_COI$Niskin.sample %in% Animalia_empty,]
 
 ####### create nMDS-plots #######
 ##### Coast vs Offshore
 par(mar=c(5,5,3,3), mfrow= c(2,2))
 ### 12S-data
-#create NMDS without neg_controls and only ASVs assigned to Fish
-env_12S_samples <- env_12S %>% filter(!grepl("neg", env_12S$Niskin.sample))
-seqtab_unrarefied_FishASVs_samples <- seqtab_unrarefied_FishASVs %>% filter(!grepl("neg", rownames(seqtab_unrarefied_FishASVs)))
-#data.nmds_12S <- decostand(seqtab_unrarefied_FishASVs_samples, method="log")
-#data.nmds_12S <- wisconsin(seqtab_unrarefied_FishASVs_samples)
-#data.nmds_12S <- decostand(seqtab_unrarefied_FishASVs_samples, method="hellinger")
-data.nmds_12S <- decostand(decostand(seqtab_unrarefied_FishASVs_samples, method="tot"), method="max")
-ord.NMDS=metaMDS(data.nmds_12S, k=2, distace ="bray", trymax=100)
-#ord.NMDS=metaMDS(seqtab_unrarefied_FishASVs, k=2, distace ="bray", trymax=100)
+#data.nmds_12S <- decostand(seqtab_Fish, method="log")
+#data.nmds_12S <- wisconsin(seqtab_Fish)
+#data.nmds_12S <- decostand(seqtab_Fish, method="hellinger")
+data.nmds_12S <- decostand(decostand(seqtab_Fish, method="tot"), method="max")
+ord.NMDS_12S=metaMDS(data.nmds_12S, k=2, distace ="bray", trymax=100, )
+#ord.NMDS=metaMDS(seqtab_Fish, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-2, 2), ylim=c(-2, 2))
+plot(ord.NMDS_12S, type='n', xlim=c(-2, 2), ylim=c(-2, 2))
 title(main = "eDNA - Fish species", adj = 0)
-points(ord.NMDS,display="sites",pch=21,col="black",bg=as.vector(env_12S_samples$Environment_color),cex=1)
+points(ord.NMDS_12S,display="sites",pch=21,col="black",bg=as.vector(env_12S$Zone_color),cex=1)
 legend("bottomleft", legend = c("Coastal","Transition","Offshore"), pch=c(16,16,16), border = "black", col=c("limegreen", "slateblue", "darkorange"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
-#text(ord.NMDS, display = "sites", cex = 0.5, color = as.vector(env_12S_samples$Environment_color))
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_12S$stress,4),sep=""), bty ="n", cex=0.8)
+#text(ord.NMDS_12S, display = "sites", cex = 0.5, color = as.vector(env_12S$Zone_color))
 
 ### COI-data
-# create NMDS unrarefied samples with ASVs assigned to Animalia
-env_COI_samples <- env_COI %>% filter(!grepl("neg", env_COI$Niskin.sample))
-seqtab_unrarefied_AnimaliaASVs_samples <- seqtab_unrarefied_AnimaliaASVs %>% filter(!grepl("neg", rownames(seqtab_unrarefied_AnimaliaASVs)))
-#data.nmds_COI <- decostand(seqtab_unrarefied_AnimaliaASVs, method="log")
-#data.nmds_COI <- decostand(seqtab_unrarefied_AnimaliaASVs_samples, method="hellinger")
-#data.nmds_COI <- wisconsin(seqtab_unrarefied_AnimaliaASVs_samples)
-data.nmds_COI <- decostand(decostand(seqtab_unrarefied_AnimaliaASVs_samples, method="tot"), method="max")
-ord.NMDS=metaMDS(data.nmds_COI, k=2, distace ="bray", trymax=100)
-#ord.NMDS=metaMDS(seqtab_unrarefied_AnimaliaASVs, k=2, distace ="bray", trymax=100)
+#data.nmds_COI <- decostand(seqtab_AnimaliaASVs, method="log")
+#data.nmds_COI <- decostand(seqtab_AnimaliaASVs_samples, method="hellinger")
+#data.nmds_COI <- wisconsin(seqtab_AnimaliaASVs_samples)
+data.nmds_COI <- decostand(decostand(seqtab_Animalia, method="tot"), method="max")
+ord.NMDS_COI=metaMDS(data.nmds_COI, k=2, distace ="bray", trymax=100)
+#ord.NMDS_COI=metaMDS(seqtab_AnimaliaASVs, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', ylim=c(-3,3), xlim=c(-3,3))
+plot(ord.NMDS_COI, type='n', ylim=c(-2,2), xlim=c(-1,1))
 title(main = "eDNA - Invertebrate species", adj = 0)
-points(ord.NMDS,display="sites",pch=21,col="black",bg=as.vector(env_COI_samples$Environment_color),cex=1)
+points(ord.NMDS_COI,display="sites",pch=21,col="black",bg=as.vector(env_COI$Zone_color),cex=1)
 legend("bottomleft", legend = c("Coastal","Transition","Offshore"), pch=c(16,16,16), border = "black", col=c("limegreen", "slateblue", "darkorange"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_COI$stress,4),sep=""), bty ="n", cex=0.8)
 
 ### Morphology data
 #create NMDS with morphological data on Fish
 data.nmds_Fish <- decostand(tab_morph_Fish, method="hellinger")
-ord.NMDS=metaMDS(data.nmds_Fish, k=2, distace ="bray", trymax=100)
+ord.NMDS_Fish=metaMDS(data.nmds_Fish, k=2, distace ="bray", trymax=100)
 #ord.NMDS=metaMDS(tab_morph_Fish, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-1, 1), ylim=c(-1, 1))
+plot(ord.NMDS_Fish, type='n', xlim=c(-1, 1), ylim=c(-1, 1))
 title(main = "Morphology - Fish species", adj = 0)
-points(ord.NMDS,display="sites",pch=21,col="black",bg=as.vector(env_morph$Environment_color),cex=1)
+points(ord.NMDS_Fish,display="sites",pch=21,col="black",bg=as.vector(env_morph$Zone_color),cex=1)
 legend("bottomleft", legend = c("Coastal","Transition","Offshore"), pch=c(16,16,16), border = "black", col=c("limegreen", "slateblue", "darkorange"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_Fish$stress,4),sep=""), bty ="n", cex=0.8)
 
 #create NMDS with morphological data on invertebrates
 data.nmds_Inv <- decostand(tab_morph_Inv, method="hellinger")
-ord.NMDS=metaMDS(data.nmds_Inv, k=2, distace ="bray", trymax=100)
+ord.NMDS_Inv=metaMDS(data.nmds_Inv, k=2, distace ="bray", trymax=100)
 #ord.NMDS=metaMDS(tab_morph_Inv, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-1, 1), ylim=c(-1, 1))
+plot(ord.NMDS_Inv, type='n', xlim=c(-1, 1), ylim=c(-1, 1))
 title(main = "Morphology - Invertebrate species", adj = 0)
-points(ord.NMDS,display="sites",pch=21,col="black",bg=as.vector(env_morph$Environment_color),cex=1)
+points(ord.NMDS_Inv,display="sites",pch=21,col="black",bg=as.vector(env_morph$Zone_color),cex=1)
 legend("bottomleft", legend = c("Coastal","Transition","Offshore"), pch=c(16,16,16), border = "black", col=c("limegreen", "slateblue", "darkorange"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_Inv$stress,4),sep=""), bty ="n", cex=0.8)
 #text(ord.NMDS, display="sites",cex=0.5)
 
 ##### Samples taken at OWFs only
 par(mar=c(3,3,3,3), mfrow= c(2,2))
 ### 12S-data
 #create NMDS only inside and outside OWF with ASVs assigned to fish
-env_12S_OWF <- env_12S_samples[!env_12S_samples$Zones %in% "Coastal",]
+env_12S_OWF <- env_12S[!env_12S$Zone %in% "Coast",]
 remove_coastal_12S <- c(env_12S_OWF$Niskin.sample)
-seqtab_unrarefied_FishASVs_OWF <- seqtab_unrarefied_FishASVs_samples[rownames(seqtab_unrarefied_FishASVs_samples) %in% remove_coastal_12S,]
-seqtab_unrarefied_FishASVs_OWF <- as.data.frame(seqtab_unrarefied_FishASVs_OWF[,!colSums(seqtab_unrarefied_FishASVs_samples) == 0,])
+seqtab_Fish_OWF <- seqtab_Fish[rownames(seqtab_Fish) %in% remove_coastal_12S,]
+seqtab_Fish_OWF <- as.data.frame(seqtab_Fish_OWF[,!colSums(seqtab_Fish_OWF) == 0,])
 data.nmds_OWF_12S  <- data.nmds_12S[rownames(data.nmds_12S)%in% remove_coastal_12S,]
-ord.NMDS=metaMDS(data.nmds_OWF_12S, k=2, distace ="bray", trymax=100)
-#ord.NMDS=metaMDS(seqtab_unrarefied_FishASVs_OWF, k=2, distace ="bray", trymax=100)
+ord.NMDS_12S_OWF=metaMDS(data.nmds_OWF_12S, k=2, distace ="bray", trymax=100)
+#ord.NMDS=metaMDS(seqtab_FishASVs_OWF, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))
+plot(ord.NMDS_12S_OWF, type='n', xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))
 title(main = "eDNA - Fish species", adj = 0)
-points(ord.NMDS,display="sites",pch=as.vector(env_12S_OWF$pch),col=as.vector(env_12S_OWF$Environment_color),bg=as.vector(env_12S_OWF$Environment_color),cex=1,)
+points(ord.NMDS_12S_OWF,display="sites",pch=as.vector(env_12S_OWF$pch),col=as.vector(env_12S_OWF$Zone_color),bg=as.vector(env_12S_OWF$Zone_color),cex=1,)
 legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_OWF"), pch = c(16,16,16,1), col=c("slateblue", "darkorange", "black", "black"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_12S_OWF$stress,4),sep=""), bty ="n", cex=0.8)
 #text(ord.NMDS, display = "sites")
 
 ### COI-data
 #create NMDS only inside and outside OWF with ASVs assigned to invertebrates
-env_COI_OWF <- env_COI[!env_COI$Zones %in% c("Coastal", "neg_control"),]
+env_COI_OWF <- env_COI[!env_COI$Zone %in% "Coast",]
 remove_coastal_COI <- c(env_COI_OWF$Niskin.sample)
-seqtab_unrarefied_AnimaliaASVs_OWF <- seqtab_unrarefied_AnimaliaASVs[rownames(seqtab_unrarefied_AnimaliaASVs) %in% remove_coastal_COI,]
+seqtab_Animalia_OWF <- seqtab_Animalia[rownames(seqtab_Animalia) %in% remove_coastal_COI,]
 data.nmds_OWF_COI <- data.nmds_COI[rownames(data.nmds_COI) %in% remove_coastal_COI,]
-ord.NMDS=metaMDS(data.nmds_OWF_COI, k=2, distace ="bray", trymax=100)
-#ord.NMDS=metaMDS(seqtab_unrarefied_AnimaliaASVs_OWF, k=2, distace ="bray", trymax=100)
+ord.NMDS_OWF_COI=metaMDS(data.nmds_OWF_COI, k=2, distace ="bray", trymax=100)
+#ord.NMDS=metaMDS(seqtab_AnimaliaASVs_OWF, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-show_axes <- c(1,2)
-plot(ord.NMDS, type='n', xlim=c(-3,5), ylim=c(-2,2))
+plot(ord.NMDS_OWF_COI, type='n', xlim=c(-3,5), ylim=c(-2,2))
 title(main = "eDNA - Invertebrate species", adj = 0)
-points(ord.NMDS,display="sites",pch=as.vector(env_COI_OWF$pch),col=as.vector(env_COI_OWF$Environment_color),bg=as.vector(env_COI_OWF$Environment_color),cex=1,)
+points(ord.NMDS_OWF_COI,display="sites",pch=as.vector(env_COI_OWF$pch),col=as.vector(env_COI_OWF$Zone_color),bg=as.vector(env_COI_OWF$Zone_color),cex=1,)
 legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_OWF"), pch = c(16,16,16,1), col=c("slateblue", "darkorange", "black", "black"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_COI$stress,4),sep=""), bty ="n", cex=0.8)
 #text(ord.NMDS, display="sites",cex=0.5)
 
 ### Morphology data
@@ -208,39 +181,39 @@ env_Fish_OWF <- env_morph[!env_morph$Zones %in% "Coastal",]
 remove_coastal_Fish <- c(env_Fish_OWF$Niskin.sample)
 tab_morph_Fish_OWF <- tab_morph_Fish[rownames(tab_morph_Fish) %in% remove_coastal_Fish,]
 data.nmds_OWF_Fish <- decostand(tab_morph_Fish_OWF, method="hellinger")
-ord.NMDS=metaMDS(data.nmds_OWF_Fish, k=2, distace ="bray", trymax=100)
+ord.NMDS_OWF_Fish=metaMDS(data.nmds_OWF_Fish, k=2, distace ="bray", trymax=100)
 #ord.NMDS=metaMDS(tab_morph_Fish_OWF, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-0.75, 0.75), ylim=c(-0.75, 0.75))
+plot(ord.NMDS_OWF_Fish, type='n', xlim=c(-0.75, 0.75), ylim=c(-0.75, 0.75))
 title(main = "Morphology - Fish species", adj = 0)
-points(ord.NMDS,display="sites",pch=as.vector(env_Fish_OWF$pch),col=as.vector(env_Fish_OWF$Environment_color),bg=as.vector(env_Fish_OWF$Environment_color),cex=1,)
+points(ord.NMDS_OWF_Fish,display="sites",pch=as.vector(env_Fish_OWF$pch),col=as.vector(env_Fish_OWF$Zone_color),bg=as.vector(env_Fish_OWF$Zone_color),cex=1,)
 legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_OWF"), pch = c(16,16,16,1), col=c("slateblue", "darkorange", "black", "black"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_Fish$stress,4),sep=""), bty ="n", cex=0.8)
 
 #create NMDS with morphological data on invertebrates
 env_Inv_OWF <- env_morph[!env_morph$Zones %in% "Coastal",]
 remove_coastal_Inv <- c(env_Inv_OWF$Niskin.sample)
 tab_morph_Inv_OWF <- tab_morph_Inv[rownames(tab_morph_Inv) %in% remove_coastal_Inv,]
 data.nmds_OWF_Inv <- decostand(tab_morph_Inv_OWF, method="hellinger")
-ord.NMDS=metaMDS(data.nmds_OWF_Inv, k=2, distace ="bray", trymax=100)
+ord.NMDS_OWF_Inv=metaMDS(data.nmds_OWF_Inv, k=2, distace ="bray", trymax=100)
 #ord.NMDS=metaMDS(tab_morph_Inv_OWF, k=2, distace ="bray", trymax=100)
 #par(mar=c(5,5,3,3))
-plot(ord.NMDS, type='n', xlim=c(-0.75, 0.75), ylim=c(-0.75, 0.75))
+plot(ord.NMDS_OWF_Inv, type='n', xlim=c(-0.75, 0.75), ylim=c(-0.75, 0.75))
 title(main = "Morphology - Invertebrate species", adj = 0)
-points(ord.NMDS,display="sites",pch=as.vector(env_Inv_OWF$pch),col=as.vector(env_Inv_OWF$Environment_color),bg=as.vector(env_Inv_OWF$Environment_color),cex=1,)
+points(ord.NMDS_OWF_Inv,display="sites",pch=as.vector(env_Inv_OWF$pch),col=as.vector(env_Inv_OWF$Zone_color),bg=as.vector(env_Inv_OWF$Zone_color),cex=1,)
 legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_OWF"), pch = c(16,16,16,1), col=c("slateblue", "darkorange", "black", "black"), bty = "n", cex = 0.8)
-legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS$stress,4),sep=""), bty ="n", cex=0.8)
+legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_Inv$stress,4),sep=""), bty ="n", cex=0.8)
 
 ###Indicator species analysis 3 zones
 library(indicspecies)
 groups_12S <- c(env_12S_samples$Zones)
-#indval_12S <- multipatt(seqtab_unrarefied_FishASVs_samples, groups_12S, func = "IndVal", control = how(nperm=9999), duleg = TRUE)
+#indval_12S <- multipatt(seqtab_FishASVs_samples, groups_12S, func = "IndVal", control = how(nperm=9999), duleg = TRUE)
 indval_12S <- multipatt(data.nmds_12S, groups_12S, func = "IndVal", control = how(nperm=9999), duleg = TRUE)
 simper_12S <- simper(data.nmds_12S, groups_12S, permutations = 9999)
 summary(indval_12S) 
 summary(simper_12S) 
 groups_COI <- c(env_COI_samples$Zones)
-#indval_COI <- multipatt(seqtab_unrarefied_AnimaliaASVs_samples, groups_COI, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE) 
+#indval_COI <- multipatt(seqtab_AnimaliaASVs_samples, groups_COI, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE) 
 indval_COI <- multipatt(data.nmds_COI, groups_COI, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE) 
 simper_COI <- simper(data.nmds_COI, groups_COI, permutations = 9999)
 summary(indval_COI) 
