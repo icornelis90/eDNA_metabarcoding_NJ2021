@@ -19,6 +19,8 @@ libraries <- c("BiocManager"
                , "dplyr"
                , "phyloseq"
                , "ggpubr"
+               , "metagMisc"
+               , "iNext"
 )
 
 for (opties in libraries){
@@ -33,35 +35,30 @@ for (opties in libraries){
   }
 }
 
+install.packages("remotes")
+remotes::install_github("vmikk/metagMisc")
+
 # make paths
 proj.path.12S <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-UE_run2")
 proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 #upload data
-table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/table_unrarefied_concatenated_CleanedASVs_WithField_FullTaxonomicAssignment.xlsx"))
-#table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/table_rarefied_CleanedASVs_WithField_FullTaxonomicAssignment.xlsx"))
+table_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 table_morph_12S <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Fish")
 table_morph_12S_Standerdized <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
-table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/Decontam/table_unrarefied_concatenated_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
-#table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/table_rarefied_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
+
+table_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 table_morph_COI <- readxl::read_excel(paste0(proj.path.COI,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Epi")
 table_morph_COI_Standerdized <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
-#env <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";")
-#env <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_all3Samples.csv"),  header=TRUE, sep=";")
-env_12S <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_OWF3HighestReadNumbers_LocationsTrawl.csv"),  header=TRUE, sep=";")
-env_COI <- read.csv(paste0(proj.path.COI,"/Step5_Statistics/environmental_data_OWF3HighestReadNumbers_LocationsTrawl.csv"),  header=TRUE, sep=";")
+
+env_12S <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+env_COI <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
 
 #add color and pch to environmental data to create the plot 
-env_12S$Environment_color <- ifelse(env_12S$Zones=="Coastal","limegreen", 
-                                ifelse(env_12S$Zones=="zone1", "slateblue", 
-                                       ifelse(env_12S$Zones=="zone2","darkorange","red")))
-env_COI$Environment_color <- ifelse(env_COI$Zones=="Coastal","limegreen", 
-                                    ifelse(env_COI$Zones=="zone1", "slateblue", 
-                                           ifelse(env_COI$Zones=="zone2","darkorange","red")))
-env_morph$Environment_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
-                                      ifelse(env_morph$Zones=="zone1", "slateblue", 
-                                             ifelse(env_morph$Zones=="zone2","darkorange","red")))
+env_morph$Zone_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
+                               ifelse(env_morph$Zones=="zone1", "slateblue", 
+                                       ifelse(env_morph$Zones=="zone2","darkorange","red")))
 
 #morphological data
 table_morph_12S_2 <- as.data.frame(table_morph_12S[,2:ncol(table_morph_12S)])
@@ -89,19 +86,50 @@ env_unrarefied_COI <- env_COI[env_COI$Niskin.sample %in% keep_samples_COI,]
 #select Fish species and merge by species
 fish_classes <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
-table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_12S[table_unrarefied_12S$Class %in% fish_classes,])
+table_unrarefied_FishASVs <- as.data.frame(table_12S[table_12S$Class %in% fish_classes,])
 table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[!table_unrarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
 rownames(table_unrarefied_FishASVs) <- table_unrarefied_FishASVs$ASV
+table_unrarefied_FishASVs_noT <- as.data.frame(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)])
+table_unrarefied_FishASVs_noT[is.na(table_unrarefied_FishASVs_noT)] <- 0
+table_unrarefied_FishASVs_noT <- table_unrarefied_FishASVs_noT[!rowSums(table_unrarefied_FishASVs_noT) == 0,]
+table_unrarefied_FishASVs_noT <- table_unrarefied_FishASVs_noT[,!colSums(table_unrarefied_FishASVs_noT) == 0]
+
+seqtab_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)])
+seqtab_unrarefied_FishASVs[is.na(seqtab_unrarefied_FishASVs)] <- 0
+seqtab_unrarefied_FishASVs <- seqtab_unrarefied_FishASVs[,!colSums(seqtab_unrarefied_FishASVs) < 10000]
+seqtab_unrarefied_FishASVs <- seqtab_unrarefied_FishASVs[!rowSums(seqtab_unrarefied_FishASVs,) < 100,]
+
+ps_12S[is.na(ps_12S)] <- 0
+ps_12S <- ps_12S[,!colSums(ps_12S) == 0]
+ps_12S <- ps_12S[!rowSums(ps_12S,) ==0,]
+seqtab_rarefied_FishASVs <- phyloseq_coverage_raref(physeq = ps_12S, 
+                                                   iter = 1, coverage = 0.8)
+rarecurve(t(seqtab_rarefied_FishASVs), ylab = "Fish ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+rarecurve(t(merged_data_unrarefied_12S), ylab = "Fish ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+merged_data_rarefied_12S <- phyloseq_coverage_raref(physeq = t(merged_data_unrarefied_12S),
+                                                   iter = 1, coverage = 0.8)
+seqtab_rarefied_FishASVs <- rrarefy(seqtab_unrarefied_FishASVs, 10000)
+
+data(esophagus)
+
 taxo <- "Species"
 merged_data_unrarefied_12S <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
 rownames(merged_data_unrarefied_12S) <- as.character(merged_data_unrarefied_12S$Group.1)
 merged_data_unrarefied_12S$Group.1 <- NULL
+merged_data_unrarefied_12S[is.na(merged_data_unrarefied_12S)] <- 0
+merged_data_unrarefied_12S <- merged_data_unrarefied_12S[!rowSums(merged_data_unrarefied_12S) == 0,]
+merged_data_unrarefied_12S <- merged_data_unrarefied_12S[,!colSums(merged_data_unrarefied_12S) == 0]
 
 #select Invertebrate species and merge by species
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_COI[table_unrarefied_COI$Kingdom %in% c("Animalia"),])
+table_unrarefied_AnimaliaASVs <- as.data.frame(table_COI[table_COI$Kingdom %in% c("Animalia"),])
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Full %in% "NA",])
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Phylum %in% "Chordata",])
-taxo <- "Full"
+
+taxo <- "Species"
 merged_data_unrarefied_Animalia <- aggregate(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
 rownames(merged_data_unrarefied_Animalia) <-as.character(merged_data_unrarefied_Animalia$Group.1)
 merged_data_unrarefied_Animalia$Group.1 <- NULL
