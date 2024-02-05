@@ -94,68 +94,151 @@ table_unrarefied_FishASVs_noT[is.na(table_unrarefied_FishASVs_noT)] <- 0
 table_unrarefied_FishASVs_noT <- table_unrarefied_FishASVs_noT[!rowSums(table_unrarefied_FishASVs_noT) == 0,]
 table_unrarefied_FishASVs_noT <- table_unrarefied_FishASVs_noT[,!colSums(table_unrarefied_FishASVs_noT) == 0]
 
-seqtab_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)])
-seqtab_unrarefied_FishASVs[is.na(seqtab_unrarefied_FishASVs)] <- 0
-seqtab_unrarefied_FishASVs <- seqtab_unrarefied_FishASVs[,!colSums(seqtab_unrarefied_FishASVs) < 10000]
-seqtab_unrarefied_FishASVs <- seqtab_unrarefied_FishASVs[!rowSums(seqtab_unrarefied_FishASVs,) < 100,]
+seqtab_unrarefied_FishASVs <- as.data.frame(t(table_unrarefied_FishASVs_noT))
+seqtab_unrarefied_FishASVs <- seqtab_unrarefied_FishASVs[!rowSums(seqtab_unrarefied_FishASVs) < 1000,]
+ps_12S <- table_unrarefied_FishASVs_noT
+ps_12S <- seqtab_unrarefied_FishASVs
+smpl_12S <- env_12S[env_12S$Niskin.sample %in% colnames(ps_12S),]
+rownames(smpl_12S) <- colnames(ps_12S)
+Taxonomy_12S <- as.matrix(table_unrarefied_FishASVs[,(ncol(table_unrarefied_FishASVs)-10):(ncol(table_unrarefied_FishASVs)-4)])
 
-ps_12S[is.na(ps_12S)] <- 0
-ps_12S <- ps_12S[,!colSums(ps_12S) == 0]
-ps_12S <- ps_12S[!rowSums(ps_12S,) ==0,]
-seqtab_rarefied_FishASVs <- phyloseq_coverage_raref(physeq = ps_12S, 
-                                                   iter = 1, coverage = 0.8)
-rarecurve(t(seqtab_rarefied_FishASVs), ylab = "Fish ASVs", 
+ps_unrarefied_FishASVs <- phyloseq(otu_table(ps_12S, taxa_are_rows = TRUE), sample_data(smpl_12S),tax_table(Taxonomy_12S))
+
+ps_rarefied_FishASVs <- phyloseq_coverage_raref(physeq = ps_unrarefied_FishASVs, 
+                                                   iter = 1, coverage = 0.99, drop_lowcoverage = T)
+Coverage_FishASVs <- phyloseq_coverage(physeq = ps_unrarefied_FishASVs)
+
+seqtab_rarefied_FishASVs <- as.data.frame(ps_rarefied_FishASVs@otu_table)
+plot_12S <- plot_richness(ps_rarefied_FishASVs, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
+ geom_boxplot(outlier.shape = NA)
+plot_12S
+
+rarecurve(seqtab_unrarefied_FishASVs, ylab = "Fish ASVs", 
           main = "Rarecurve of unrarefied samples after taxonomic assignment", 
           col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-rarecurve(t(merged_data_unrarefied_12S), ylab = "Fish ASVs", 
+rarecurve(seqtab_rarefied_FishASVs, ylab = "Fish ASVs", 
           main = "Rarecurve of unrarefied samples after taxonomic assignment", 
-          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-merged_data_rarefied_12S <- phyloseq_coverage_raref(physeq = t(merged_data_unrarefied_12S),
+          col = as.vector(smpl_12S$Environment_color), label = FALSE, step =100)
+merged_data_rarefied_12S <- phyloseq_coverage_raref(physeq = t(table_unrarefied_Fish),
                                                    iter = 1, coverage = 0.8)
 seqtab_rarefied_FishASVs <- rrarefy(seqtab_unrarefied_FishASVs, 10000)
 
-data(esophagus)
 
 taxo <- "Species"
-merged_data_unrarefied_12S <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
-rownames(merged_data_unrarefied_12S) <- as.character(merged_data_unrarefied_12S$Group.1)
-merged_data_unrarefied_12S$Group.1 <- NULL
-merged_data_unrarefied_12S[is.na(merged_data_unrarefied_12S)] <- 0
-merged_data_unrarefied_12S <- merged_data_unrarefied_12S[!rowSums(merged_data_unrarefied_12S) == 0,]
-merged_data_unrarefied_12S <- merged_data_unrarefied_12S[,!colSums(merged_data_unrarefied_12S) == 0]
+table_unrarefied_Fish <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
+rownames(table_unrarefied_Fish) <- as.character(table_unrarefied_Fish$Group.1)
+table_unrarefied_Fish$Group.1 <- NULL
+table_unrarefied_Fish[is.na(table_unrarefied_Fish)] <- 0
+table_unrarefied_Fish <- table_unrarefied_Fish[!rowSums(table_unrarefied_Fish) == 0,]
+table_unrarefied_Fish <- table_unrarefied_Fish[,!colSums(table_unrarefied_Fish) == 0]
 
 #select Invertebrate species and merge by species
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_COI[table_COI$Kingdom %in% c("Animalia"),])
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Full %in% "NA",])
+table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Species %in% "NA",])
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Phylum %in% "Chordata",])
 
+table_unrarefied_AnimaliaASVs_noT <- as.data.frame(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)])
+table_unrarefied_AnimaliaASVs_noT[is.na(table_unrarefied_AnimaliaASVs_noT)] <- 0
+table_unrarefied_AnimaliaASVs_noT <- table_unrarefied_AnimaliaASVs_noT[!rowSums(table_unrarefied_AnimaliaASVs_noT) == 0,]
+table_unrarefied_AnimaliaASVs_noT <- table_unrarefied_AnimaliaASVs_noT[,!colSums(table_unrarefied_AnimaliaASVs_noT) == 0]
+
+
+ps_COI <- table_unrarefied_AnimaliaASVs_noT
+smpl_COI <- env_COI[env_COI$Niskin.sample %in% colnames(ps_COI),]
+rownames(smpl_COI) <- colnames(ps_COI)
+Taxonomy_COI <- as.matrix(table_unrarefied_AnimaliaASVs[,(ncol(table_unrarefied_AnimaliaASVs)-10):(ncol(table_unrarefied_AnimaliaASVs)-4)])
+
+ps_unrarefied_AnimaliaASVs <- phyloseq(otu_table(ps_COI, taxa_are_rows = TRUE), sample_data(smpl_COI),tax_table(Taxonomy_COI))
+
+ps_rarefied_AnimaliaASVs <- phyloseq_coverage_raref(physeq = ps_unrarefied_AnimaliaASVs, 
+                                                iter = 1, coverage = 0.85, drop_lowcoverage = T)
+Coverage_AnimaliaASVs <- phyloseq_coverage(physeq = ps_unrarefied_AnimaliaASVs)
+
+seqtab_rarefied_AnimaliaASVs <- as.data.frame(ps_rarefied_AnimaliaASVs@otu_table)
+plot_COI <- plot_richness(ps_rarefied_AnimaliaASVs, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
+  geom_boxplot(outlier.shape = NA)
+plot_COI
+
+rarecurve(t(table_unrarefied_AnimaliaASVs_noT), ylab = "Animalia ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_COI$Environment_color), label = FALSE, step =100)
+rarecurve(seqtab_rarefied_AnimaliaASVs, ylab = "Animalia ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(smpl_COI$Environment_color), label = FALSE, step =100)
+merged_data_rarefied_COI <- phyloseq_coverage_raref(physeq = t(table_unrarefied_Animalia),
+                                                    iter = 1, coverage = 0.8)
+seqtab_rarefied_AnimaliaASVs <- rrarefy(seqtab_unrarefied_AnimaliaASVs, 10000)
+
+
+
+
 taxo <- "Species"
-merged_data_unrarefied_Animalia <- aggregate(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
-rownames(merged_data_unrarefied_Animalia) <-as.character(merged_data_unrarefied_Animalia$Group.1)
-merged_data_unrarefied_Animalia$Group.1 <- NULL
+table_unrarefied_Animalia <- aggregate(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
+rownames(table_unrarefied_Animalia) <-as.character(table_unrarefied_Animalia$Group.1)
+table_unrarefied_Animalia$Group.1 <- NULL
+table_unrarefied_Animalia[is.na(table_unrarefied_Animalia)] <- 0
+table_unrarefied_Animalia <- table_unrarefied_Animalia[!rowSums(table_unrarefied_Animalia) == 0,]
+table_unrarefied_Animalia <- table_unrarefied_Animalia[,!colSums(table_unrarefied_Animalia) == 0]
 
 #remove negative controls and order colomuns according to zone
 env_unrarefied_12S <- env_unrarefied_12S %>% filter(!grepl("neg", env_unrarefied_12S$Niskin.sample))
 colorder_12S <- c(env_unrarefied_12S$Niskin.sample)
-merged_data_unrarefied_12S <- merged_data_unrarefied_12S[,colorder_12S]
+table_unrarefied_Fish <- table_unrarefied_Fish[,colorder_12S]
 env_unrarefied_COI <- env_unrarefied_COI %>% filter(!grepl("neg", env_unrarefied_COI$Niskin.sample))
 colorder_COI <- c(env_unrarefied_COI$Niskin.sample)
 merged_data_unrarefied_Animalia <- merged_data_unrarefied_Animalia[,colorder_COI]
 
 ##Observed diversity and Shannon diversity index for all datasets seperatly
 #eDNA-12S
-ps_12S <- merged_data_unrarefied_12S
-smpl_12S <- env_unrarefied_12S
-#smpl_12S$Area <- paste(smpl_12S$Environment, smpl_12S$Zones, sep="_")
-#smpl_12S$Area <- ifelse(smpl_12S$Area=="Coastal_Coastal","Coastal", smpl_12S$Area)
-smpl_12S$Area <- ifelse(smpl_12S$Zones=="Coastal","Coast", 
-                                    ifelse(smpl_12S$Zones=="zone1", "Transition", 
-                                           ifelse(smpl_12S$Zones=="zone2","Offshore","red")))
+ps_12S <- table_unrarefied_Fish
+smpl_12S <- env_12S[env_12S$Niskin.sample %in% colnames(ps_12S),]
 rownames(smpl_12S) <- colnames(ps_12S)
-Taxonomy_12S <- rownames(merged_data_unrarefied_12S)
+Taxonomy_12S <- rownames(table_unrarefied_Fish)
 Taxonomy_12S <- as.matrix(Taxonomy_12S)
 rownames(Taxonomy_12S) <- rownames(ps_12S)
-#ps_12S <- phyloseq(otu_table(ps_12S, taxa_are_rows = TRUE), sample_data(smpl_12S),tax_table(Taxonomy_12S))
+ps_unrarefied_Fish <- phyloseq(otu_table(ps_12S, taxa_are_rows = TRUE), sample_data(smpl_12S),tax_table(Taxonomy_12S))
+
+ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, 
+                                                iter = 1, coverage = 0.98, drop_lowcoverage = T)
+Coverage_Fish <- phyloseq_coverage(physeq = ps_unrarefied_Fish)
+seqtab_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
+plot_12S <- plot_richness(ps_rarefied_Fish, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
+  geom_boxplot(outlier.shape = NA)
+plot_12S
+
+rarecurve(t(table_unrarefied_Fish), ylab = "Fish ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+rarecurve(seqtab_rarefied_Fish, ylab = "Fish ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+
+ps_Animalia <- table_unrarefied_Animalia
+smpl_Animalia <- env_COI[env_COI$Niskin.sample %in% colnames(ps_Animalia),]
+rownames(smpl_Animalia) <- colnames(ps_Animalia)
+Taxonomy_Animalia <- rownames(table_unrarefied_Animalia)
+Taxonomy_Animalia <- as.matrix(Taxonomy_Animalia)
+rownames(Taxonomy_Animalia) <- rownames(ps_Animalia)
+ps_unrarefied_Animalia <- phyloseq(otu_table(ps_Animalia, taxa_are_rows = TRUE), 
+                                   sample_data(smpl_Animalia),tax_table(Taxonomy_Animalia))
+ps_rarefied_Animalia <- phyloseq_coverage_raref(physeq = ps_unrarefied_Animalia, 
+                                            iter = 1, coverage = 0.98, drop_lowcoverage = T)
+Coverage_Animalia <- phyloseq_coverage(physeq = ps_unrarefied_Animalia)
+Coverage_Animalia <- phyloseq_coverage(physeq = ps_rarefied_Animalia)
+
+seqtab_rarefied_Animalia <- as.data.frame(ps_rarefied_Animalia@otu_table)
+plot_12S <- plot_richness(ps_rarefied_Animalia, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
+  geom_boxplot(outlier.shape = NA)
+plot_12S
+
+rarecurve(t(table_unrarefied_Animalia), ylab = "Animalia ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+rarecurve(seqtab_rarefied_Animalia, ylab = "Animalia ASVs", 
+          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
+          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
+
+
 #plot_12S <- plot_richness(ps_12S, x="Area", measures=c("Observed", "Shannon"), color="Area") + 
   #geom_boxplot(outlier.shape = NA)
 #plot_12S
@@ -232,7 +315,7 @@ rownames(Taxonomy_morph_COI_Std) <- rownames(ps_morph_COI_Std)
 
 
 ##Observed diversity and Shannon diversity index for all Fish data 
-rownames(smpl_12S) <- paste(colnames(merged_data_unrarefied_12S), "eDNA_Fish", sep="_")
+rownames(smpl_12S) <- paste(colnames(table_unrarefied_Fish), "eDNA_Fish", sep="_")
 rownames(smpl_morph_12S) <- paste(colnames(table_morph_12S_2), "Morphology_Fish", sep="_")
 rownames(smpl_morph_12S_Std) <- paste(colnames(table_morph_12S_Std_2), "Morphology_Standerdized_Fish", sep="_")
 #smpl_Fish <- bind_rows(smpl_12S, smpl_morph_12S, smpl_morph_12S_Std)
@@ -244,7 +327,7 @@ smpl_Fish$Method <- c(rep("eDNA", nrow(smpl_12S)),
                       rep("Morphology", nrow(smpl_morph_12S)))
 smpl_Fish$Organism <- sub(".*_","",rownames(smpl_Fish))
 
-colnames(ps_12S) <- paste(colnames(merged_data_unrarefied_12S), "eDNA_Fish", sep="_")
+colnames(ps_12S) <- paste(colnames(table_unrarefied_Fish), "eDNA_Fish", sep="_")
 colnames(ps_morph_12S) <- paste(colnames(table_morph_12S_2), "Morphology_Fish", sep="_")
 colnames(ps_morph_12S_Std) <- paste(colnames(table_morph_12S_Std_2), "Morphology_Standerdized_Fish", sep="_")
 
@@ -565,5 +648,5 @@ bc$x[which(bc$y==max(bc$y))]
 Clytia_hemisphaerica <- sum(merged_data_unrarefied_Animalia[rownames(merged_data_unrarefied_Animalia) %in% "Clytia hemisphaerica",])
 Total_reads <- sum(merged_data_unrarefied_Animalia)
 
-Whiting <- sum(merged_data_unrarefied_12S[rownames(merged_data_unrarefied_12S) %in% "Merlangius merlangus",])
-Total_reads <- sum(merged_data_unrarefied_12S)
+Whiting <- sum(table_unrarefied_Fish[rownames(table_unrarefied_Fish) %in% "Merlangius merlangus",])
+Total_reads <- sum(table_unrarefied_Fish)
