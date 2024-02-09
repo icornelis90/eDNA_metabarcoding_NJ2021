@@ -13,7 +13,8 @@ library(tidyverse)
 library(ade4)
 library(here)
 library(devtools)
-devtools::install_github("donaldtmcknight/microDecon")
+library(microDecon)
+#devtools::install_github("donaldtmcknight/microDecon")
 
 # make paths
 proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-UE_run2")
@@ -93,15 +94,27 @@ decontaminated_DYFS <- decon(data = table_DYFS, numb.blanks=neg_DYFS, numb.ind=n
 
 decon_DYFS <- as.data.frame(decontaminated_DYFS$decon.table)
 contaminant_DYFS <- as.data.frame(decontaminated_DYFS$OTUs.removed)
+contaminant_reads_DYFS <- as.data.frame(decontaminated_DYFS$reads.removed)
 
 table_DYFS_Field <- table_DYFS[,!grepl("filter|DNA|PCR", colnames(table_DYFS))]
 neg_DYFS_Field <- length(c(colnames(table_DYFS_Field[, grepl("neg", colnames(table_DYFS_Field))])))
 
 decontaminated_DYFS_Field <- decon(data = table_DYFS_Field, numb.blanks=neg_DYFS_Field, numb.ind=numb_DYFS, taxa=T,
-                             runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
+                                   runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
 
-decon_DYFS_Field <- as.data.frame(decontaminated_DYFS$decon.table)
-contaminant_DYFS_Field <- as.data.frame(decontaminated_DYFS$OTUs.removed)
+decon_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$decon.table)
+contaminant_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$OTUs.removed)
+contaminant_reads_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$reads.removed)
+
+table_DYFS_NoField <- table_DYFS[,!grepl("neg_control", colnames(table_DYFS))]
+neg_DYFS_NoField <- length(c(colnames(table_DYFS_NoField[, grepl("neg", colnames(table_DYFS_NoField))])))
+
+decontaminated_DYFS_NoField <- decon(data = table_DYFS_NoField, numb.blanks=neg_DYFS_NoField, numb.ind=numb_DYFS, taxa=T,
+                                   runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
+
+decon_DYFS_NoField <- as.data.frame(decontaminated_DYFS_NoField$decon.table)
+contaminant_DYFS_NoField <- as.data.frame(decontaminated_DYFS_NoField$OTUs.removed)
+contaminant_reads_DYFS_NoField <- as.data.frame(decontaminated_DYFS_NoField$reads.removed)
 
 #Select samples from the GeoV-campaign in November
 Geo_samples <- c(env$Niskin.sample[which(env$Zone %in% c("Transition", "Offshore") | env$Location == "ft230")])
@@ -129,6 +142,7 @@ decontaminated_Geo <- decon(data = table_Geo, numb.blanks=neg_Geo, numb.ind=numb
 
 decon_Geo <- as.data.frame(decontaminated_Geo$decon.table)
 contaminant_Geo <- as.data.frame(decontaminated_Geo$OTUs.removed)
+contaminant_reads_Geo <- as.data.frame(decontaminated_Geo$reads.removed)
 
 table_Geo_Field <- table_Geo[,!grepl("filter|DNA|PCR", colnames(table_Geo))]
 neg_Geo_Field <- length(c(colnames(table_Geo_Field[, grepl("neg", colnames(table_Geo_Field))])))
@@ -136,8 +150,19 @@ neg_Geo_Field <- length(c(colnames(table_Geo_Field[, grepl("neg", colnames(table
 decontaminated_Geo_Field <- decon(data = table_Geo_Field, numb.blanks=neg_Geo_Field, numb.ind=numb_Geo, taxa=T,
                                    runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
 
-decon_Geo_Field <- as.data.frame(decontaminated_Geo$decon.table)
-contaminant_Geo_Field <- as.data.frame(decontaminated_Geo$OTUs.removed)
+decon_Geo_Field <- as.data.frame(decontaminated_Geo_Field$decon.table)
+contaminant_Geo_Field <- as.data.frame(decontaminated_Geo_Field$OTUs.removed)
+contaminant_reads_Geo_Field <- as.data.frame(decontaminated_Geo_Field$reads.removed)
+
+table_Geo_NoField <- table_Geo[,!grepl("OWF", colnames(table_Geo))]
+neg_Geo_NoField <- length(c(colnames(table_Geo_NoField[, grepl("neg", colnames(table_Geo_NoField))])))
+
+decontaminated_Geo_NoField <- decon(data = table_Geo_NoField, numb.blanks=neg_Geo_NoField, numb.ind=numb_Geo, taxa=T,
+                                  runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
+
+decon_Geo_NoField <- as.data.frame(decontaminated_Geo_NoField$decon.table)
+contaminant_Geo_NoField <- as.data.frame(decontaminated_Geo_NoField$OTUs.removed)
+contaminant_reads_Geo_NoField <- as.data.frame(decontaminated_Geo_NoField$reads.removed)
 
 table_clean <- merge(decon_DYFS, decon_Geo, by = 1, all = T)
 table_clean <- table_clean[, !grepl("Taxa|blank", colnames(table_clean))]
@@ -145,6 +170,13 @@ table_raw_clean <- merge(table_clean, table_raw[(ncol(table_raw)-10):ncol(table_
                          by.x = 1, by.y = "ASV", all.x = T)
 colnames(table_raw_clean)[1] <- "ASV"
 table_raw_clean <- table_raw_clean %>% relocate("ASV", .before = 'DADA2')
+
+table_clean_Field <- merge(decon_DYFS_Field , decon_Geo_Field, by = 1, all = T)
+table_clean_Field <- table_clean_Field[, !grepl("Taxa|blank", colnames(table_clean_Field))]
+table_raw_clean_Field <- merge(table_clean_Field, table_raw[(ncol(table_raw)-10):ncol(table_raw)],
+                         by.x = 1, by.y = "ASV", all.x = T)
+colnames(table_raw_clean_Field)[1] <- "ASV"
+table_raw_clean_Field <- table_raw_clean_Field %>% relocate("ASV", .before = 'DADA2')
 
 #reorder the environmental data
 env_order<- env %>% 
@@ -162,16 +194,25 @@ seqtab_raw$names <- str_sub(rownames(seqtab_raw), end=-4) # removes PCR number (
 seqtab_concatenated <- aggregate(seqtab_raw[,1:ncol(seqtab_raw)-1], by= list(seqtab_raw$names),FUN=sum)
 rownames(seqtab_concatenated) <- seqtab_concatenated$Group.1
 seqtab_concatenated <- seqtab_concatenated[,2:ncol(seqtab_raw)]  
-NumberOfSequencesConcat <- as.data.frame(sort.default(rowSums(seqtab_concatenated[1:nrow(seqtab_concatenated),]))) #number of sequences per sample after concatenation, 8 samples <300 reads
-NumberOfASVsConcat <- as.data.frame(rowSums(seqtab_concatenated !=0)) #number of ASVs per sample after concatenation
-#write_tsv(as_tibble(NumberOfASVsConcat5, rownames="asv"), file=paste0(proj.path,"/MiFish_UE-S_concatenated/results2/NumberOfASVsPerSample_Concat_unrarefied_CleanedByNoField_05Threshold.tsv"))
-#write_tsv(as_tibble(NumberOfSequencesConcat5, rownames="samples"), file=paste0(proj.path, "/MiFish_UE-S_concatenated/results2/NumberOfSequencesPerSamples_Concat_unrarefied_CleanedByNoField_05Threshold.tsv"))
 table_clean_concatenated_noT <- as.data.frame(t(seqtab_concatenated))
 table_clean_concatenated_noT <- table_clean_concatenated_noT[, c(env_order$Niskin.sample[which(!env_order$Zone == "neg_control")])]
 table_unrarefied_concatenated <- merge(table_clean_concatenated_noT, table_raw[(ncol(table_raw)-10):ncol(table_raw)],
                                        by.x = 0, by.y = "ASV", all.x = T)
 colnames(table_unrarefied_concatenated)[1] <- "ASV"
 table_unrarefied_concatenated <- table_unrarefied_concatenated %>% relocate("ASV", .before = 'DADA2')
+
+seqtab_raw_Field <- as.data.frame(t(table_raw_clean_Field[,1:(ncol(table_raw_clean_Field)-11)]))
+colnames(seqtab_raw_Field) <- table_raw_clean_Field$ASV
+seqtab_raw_Field$names <- str_sub(rownames(seqtab_raw_Field), end=-4) # removes PCR number (_S1, _S2 or _S3) from samplenames
+seqtab_concatenated_Field <- aggregate(seqtab_raw_Field[,1:ncol(seqtab_raw_Field)-1], by= list(seqtab_raw_Field$names),FUN=sum)
+rownames(seqtab_concatenated_Field) <- seqtab_concatenated_Field$Group.1
+seqtab_concatenated_Field <- seqtab_concatenated_Field[,2:ncol(seqtab_raw_Field)]  
+table_clean_concatenated_noT_Field <- as.data.frame(t(seqtab_concatenated_Field))
+table_clean_concatenated_noT_Field <- table_clean_concatenated_noT_Field[, c(env_order$Niskin.sample[which(!env_order$Zone == "neg_control")])]
+table_unrarefied_concatenated_Field <- merge(table_clean_concatenated_noT_Field, table_raw[(ncol(table_raw)-10):ncol(table_raw)],
+                                       by.x = 0, by.y = "ASV", all.x = T)
+colnames(table_unrarefied_concatenated_Field)[1] <- "ASV"
+table_unrarefied_concatenated_Field <- table_unrarefied_concatenated_Field %>% relocate("ASV", .before = 'DADA2')
 
 #Save Datasets
 write.xlsx(table_raw_clean, 
@@ -182,7 +223,11 @@ write.xlsx(table_unrarefied_concatenated,
            paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"), 
            sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
 
-list_of_datasets <- list("DYFS" = contaminant_DYFS, "DYFS_Field" = contaminant_DYFS_Field, 
-                         "GeoV" = contaminant_Geo, "GeoV_Field" = contaminant_Geo_Field)
+write.xlsx(table_unrarefied_concatenated_Field, 
+           paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean_Field.xlsx"), 
+           sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
+
+list_of_datasets <- list("DYFS" = contaminant_DYFS, "DYFS_Field" = contaminant_DYFS_Field, "DYFS_noField" = contaminant_DYFS_NoField,
+                         "GeoV" = contaminant_Geo, "GeoV_Field" = contaminant_Geo_Field, "GeoV_NoField" = contaminant_Geo_NoField)
 write.xlsx(list_of_datasets, paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/contaminantASVs.xlsx"), colNames = T)
 
