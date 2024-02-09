@@ -227,7 +227,17 @@ write.xlsx(table_unrarefied_concatenated_Field,
            paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean_Field.xlsx"), 
            sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
 
-list_of_datasets <- list("DYFS" = contaminant_DYFS, "DYFS_Field" = contaminant_DYFS_Field, "DYFS_noField" = contaminant_DYFS_NoField,
-                         "GeoV" = contaminant_Geo, "GeoV_Field" = contaminant_Geo_Field, "GeoV_NoField" = contaminant_Geo_NoField)
+list_of_datasets <- list("DYFS" = contaminant_DYFS, 
+                         "DYFS_Field" = contaminant_DYFS_Field, 
+                         "DYFS_noField" = contaminant_DYFS_NoField,
+                         "DYFS_reads" = contaminant_reads_DYFS, 
+                         "DYFS_reads_Field" = contaminant_reads_DYFS_Field,
+                         "DYFS_reads_noField" = contaminant_reads_DYFS_NoField,
+                         "GeoV" = contaminant_Geo,
+                         "GeoV_Field" = contaminant_Geo_Field,
+                         "GeoV_NoField" = contaminant_Geo_NoField,
+                         "GeoV_reads" = contaminant_reads_Geo,
+                         "GeoV_reads_Field" = contaminant_reads_Geo_Field,
+                         "GeoV_reads_NoField" = contaminant_reads_Geo_NoField)
 write.xlsx(list_of_datasets, paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/contaminantASVs.xlsx"), colNames = T)
 
