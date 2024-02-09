@@ -157,7 +157,7 @@ title(main = "eDNA - Fish species", adj = 0)
 points(ord.NMDS_12S_OWF,display="sites",pch=as.vector(env_12S_OWF$pch),col=as.vector(env_12S_OWF$Zone_color),bg=as.vector(env_12S_OWF$Zone_color),cex=1,)
 legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_OWF"), pch = c(16,16,16,1), col=c("slateblue", "darkorange", "black", "black"), bty = "n", cex = 0.8)
 legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_12S_OWF$stress,4),sep=""), bty ="n", cex=0.8)
-#text(ord.NMDS, display = "sites")
+#text(ord.NMDS_12S_OWF, display = "sites")
 
 ### COI-data
 #create NMDS only inside and outside OWF with ASVs assigned to invertebrates
