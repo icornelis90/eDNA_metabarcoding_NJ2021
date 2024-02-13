@@ -177,7 +177,7 @@ for (i in 1:length(iNext_Fish$iNextEst$size_based$Assemblage)){
     which(smpl_Fish$Niskin.sample == iNext_Fish$iNextEst$size_based$Assemblage[i])]
 }
 
-g_Fish <- ggiNEXT(iNext_Fish, type=2, se=TRUE, grey=FALSE)
+g_Fish <- ggiNEXT(iNext_Fish, type=3, se=TRUE, grey=FALSE)
 g_Fish_2 <- g_Fish + 
   scale_colour_manual(values=c(smpl_Fish$Zone_color)) +
   scale_fill_manual(values=c(smpl_Fish$Zone_color)) +
@@ -191,7 +191,7 @@ seqtab_unrarefied_Fish <- aggregate(seqtab_unrarefied_Fish[,1:(ncol(seqtab_unrar
 rownames(seqtab_unrarefied_Fish) <- seqtab_unrarefied_Fish$Group.1
 seqtab_unrarefied_Fish$Group.1 <- NULL
 iNext_Fish_Zone <- iNEXT(t(seqtab_unrarefied_Fish), q=c(0), datatype="abundance")
-ggiNEXT(iNext_Fish_Zone, type=1, se=TRUE, grey=FALSE)
+ggiNEXT(iNext_Fish_Zone, type=3, se=TRUE, grey=FALSE)
 
 ps_Fish_Zone <- phyloseq(otu_table(t(seqtab_unrarefied_Fish), taxa_are_rows = TRUE))
 Coverage_Fish_Zone <- phyloseq_coverage(physeq = ps_Fish_Zone)
