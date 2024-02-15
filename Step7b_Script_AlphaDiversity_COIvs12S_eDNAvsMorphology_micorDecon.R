@@ -41,13 +41,15 @@ proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 #upload data
 table_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
+table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy.xlsx"),sheet = "Fish")
 
 table_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
+table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy.xlsx"),sheet = "Epi")
 
-env_12S <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
-env_COI <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+env_12S_all <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+env_COI_all <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+env_12S <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_OWF3HighestReadNumbers_LocationsTrawl.csv"),  header=TRUE, sep=";")
+env_COI <- read.csv(paste0(proj.path.COI,"/Step5_Statistics/environmental_data_OWF3HighestReadNumbers_LocationsTrawl.csv"),  header=TRUE, sep=";")
 env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
 
 #add color and pch to environmental data to create the plot 
@@ -106,7 +108,7 @@ table_unrarefied_Inv[is.na(table_unrarefied_Inv)] <- 0
 table_unrarefied_Inv <- table_unrarefied_Inv[!rowSums(table_unrarefied_Inv) == 0,]
 table_unrarefied_Inv <- table_unrarefied_Inv[,!colSums(table_unrarefied_Inv) == 0]
 
-#Calculate the Coverage of Fish species level
+#Calculate the Coverage of Fish species level for all samples
 ps_Fish <- table_unrarefied_Fish
 smpl_Fish <- env_12S[env_12S$Niskin.sample %in% colnames(ps_Fish),]
 rownames(smpl_Fish) <- colnames(ps_Fish)
@@ -125,12 +127,42 @@ plot_Fish <- plot_richness(ps_rarefied_Fish, x="Zone", measures=c("Observed", "S
   geom_boxplot(outlier.shape = NA)
 plot_Fish
 
-iNext_Fish <- iNEXT(ps_Fish, q=c(0,1), datatype="abundance", knot = 40)
+t <- seq(1, 500, by=15)
+iNext_Fish_track6_1 <- iNEXT(ps_Fish[,colnames(ps_Fish) == "ftTrack6_1"], q=c(0,1), datatype="abundance", size=t) #knot = 40, 
 
 Fish_Diversity <- as.data.frame(iNext_Fish$iNextEst$coverage_based[
   which(iNext_Fish$iNextEst$coverage_based$Order.q == 0),])
-Fish_Diversity <- as.data.frame(Fish_Diversity[Fish_Diversity$SC > 0.9928059,])
-Fish_Diversity <- as.data.frame(Fish_Diversity[Fish_Diversity$SC > 0.992,])
+Fish_Diversity_12S <- as.data.frame(Fish_Diversity[Fish_Diversity$SC > 0.9928059,])
+Fish_Diversity_12S_2 <- aggregate(Fish_Diversity_12S,
+                            by= list(as.factor(Fish_Diversity_12S[,"Assemblage"])), FUN=min)
+Fish_Diversity_12S_2$Method <- ifelse(Fish_Diversity_12S_2$Assemblage == "ftWG2_5", "Observed", "Rarefaction")
+
+Fish_Diversity_morph <- as.data.frame(Fish_Diversity[Fish_Diversity$SC > 0.9598690,])
+Fish_Diversity_morph_2 <- aggregate(Fish_Diversity_morph,
+                                  by= list(as.factor(Fish_Diversity_morph[,"Assemblage"])), FUN=min)
+Fish_Diversity_morph_2$Method <- ifelse(Fish_Diversity_morph_2$Assemblage == "ftWG2_5", "Observed", "Rarefaction")
+
+Coast <- c(Fish_Diversity_morph_2$qD[
+  Fish_Diversity_morph_2$Assemblage %in% env_12S$Niskin.sample[env_12S$Zones == "Coastal"]])
+Transition <- c(Fish_Diversity_morph_2$qD[
+  Fish_Diversity_morph_2$Assemblage %in% env_12S$Niskin.sample[env_12S$Zones == "zone1"]])
+Offshore <- c(Fish_Diversity_morph_2$qD[
+  Fish_Diversity_morph_2$Assemblage %in% env_12S$Niskin.sample[env_12S$Zones == "zone2"]])
+
+boxplot(Coast, Transition, Offshore,
+        main="Average number of species per Zone", ylab ="Number of species", 
+        names = c("Coast", "Transition", "Offshore"),
+        col=c("limegreen", "slateblue" , "darkorange"))
+
+
+
+Fish_Shannon <- as.data.frame(iNext_Fish$iNextEst$coverage_based[
+  which(iNext_Fish$iNextEst$coverage_based$Order.q == 0),])
+Fish_Shannon <- as.data.frame(Fish_Shannon[Fish_Shannon$SC > 0.9928059,])
+
+Fish_Shannon_2 <- aggregate(Fish_Shannon,
+                              by= list(as.factor(Fish_Shannon[,"Assemblage"])), FUN=min)
+Fish_Shannon_2$Method <- ifelse(Fish_Shannon_2$Assemblage == "ftWG2_5", "Observed", "Rarefaction")
 
 g_Fish <- ggiNEXT(iNext_Fish, type=3, se=TRUE, grey=FALSE, facet.var="Order.q")
 g_Fish_2 <- g_Fish + 
@@ -138,23 +170,24 @@ g_Fish_2 <- g_Fish +
   scale_fill_manual(values=c(smpl_Fish$Zone_color)) +
   scale_shape_manual(values=c(rep(20, times = 125))) +
   theme(legend.text = element_text(size = 9.5)) +
-  xlim(0.99, 1)
+  xlim(0, 1)
 g_Fish_2
 
-#Calculate the Coverage of Invertebrate species level
+#Calculate the Coverage of Invertebrate species level for all samples
 ps_Inv <- table_unrarefied_Inv
-smpl_Inv <- env_12S[env_12S$Niskin.sample %in% colnames(ps_Inv),]
+smpl_Inv <- env_12S_all[env_12S_all$Niskin.sample %in% colnames(ps_Inv),]
 rownames(smpl_Inv) <- colnames(ps_Inv)
 Taxonomy_Inv <- as.matrix(rownames(ps_Inv))
 rownames(Taxonomy_Inv) <- rownames(ps_Inv)
 
-ps_unrarefied_Inv <- phyloseq(otu_table(ps_Inv, taxa_are_rows = TRUE), sample_data(smpl_Inv),tax_table(Taxonomy_Inv))
+ps_unrarefied_Inv <- phyloseq(otu_table(ps_Inv, taxa_are_rows = TRUE), 
+                              sample_data(smpl_Inv),tax_table(Taxonomy_Inv))
 Coverage_Inv <- phyloseq_coverage(physeq = ps_unrarefied_Inv)
 ps_rarefied_Inv <- phyloseq_coverage_raref(physeq = ps_unrarefied_Inv, 
                                             iter = 1, coverage = 0.85, drop_lowcoverage = T)
 seqtab_rarefied_Inv <- as.data.frame(ps_rarefied_Inv@otu_table)
 
-iNext_Inv <- iNEXT(ps_Inv, q=c(0), datatype="abundance", knot = 20)
+iNext_Inv <- iNEXT(ps_Inv, q=c(0), datatype="abundance", knot = 40)
 g_Inv <- ggiNEXT(iNext_Inv, type=1, se=TRUE, grey=FALSE)
 g_Inv_2 <- g_Inv + 
   scale_colour_manual(values=c(smpl_Inv$Zone_color)) +
@@ -163,56 +196,14 @@ g_Inv_2 <- g_Inv +
   theme(legend.text = element_text(size = 9.5))
 g_Inv_2
 
+ps_Inv_Top3 <- ps_Inv[,colnames(ps_Inv) %in% c(env_COI$Niskin.sample)]
+ps_unrarefied_Inv_Top3 <- phyloseq(otu_table(ps_Inv_Top3, 
+                                        taxa_are_rows = TRUE))
+Coverage_Inv_Top3 <- phyloseq_coverage(physeq = ps_unrarefied_Inv_Top3)
+
+
 ##Observed diversity and Shannon diversity index for all datasets seperatly
 #eDNA-12S
-ps_12S <- table_unrarefied_Fish
-smpl_12S <- env_12S[env_12S$Niskin.sample %in% colnames(ps_12S),]
-rownames(smpl_12S) <- colnames(ps_12S)
-Taxonomy_12S <- rownames(table_unrarefied_Fish)
-Taxonomy_12S <- as.matrix(Taxonomy_12S)
-rownames(Taxonomy_12S) <- rownames(ps_12S)
-ps_unrarefied_Fish <- phyloseq(otu_table(ps_12S, taxa_are_rows = TRUE), sample_data(smpl_12S),tax_table(Taxonomy_12S))
-
-ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, 
-                                                iter = 1, coverage = 0.98, drop_lowcoverage = T)
-Coverage_Fish <- phyloseq_coverage(physeq = ps_unrarefied_Fish)
-seqtab_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
-plot_12S <- plot_richness(ps_rarefied_Fish, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
-  geom_boxplot(outlier.shape = NA)
-plot_12S
-
-rarecurve(t(table_unrarefied_Fish), ylab = "Fish ASVs", 
-          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
-          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-rarecurve(seqtab_rarefied_Fish, ylab = "Fish ASVs", 
-          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
-          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-
-ps_Animalia <- table_unrarefied_Animalia
-smpl_Animalia <- env_COI[env_COI$Niskin.sample %in% colnames(ps_Animalia),]
-rownames(smpl_Animalia) <- colnames(ps_Animalia)
-Taxonomy_Animalia <- rownames(table_unrarefied_Animalia)
-Taxonomy_Animalia <- as.matrix(Taxonomy_Animalia)
-rownames(Taxonomy_Animalia) <- rownames(ps_Animalia)
-ps_unrarefied_Animalia <- phyloseq(otu_table(ps_Animalia, taxa_are_rows = TRUE), 
-                                   sample_data(smpl_Animalia),tax_table(Taxonomy_Animalia))
-ps_rarefied_Animalia <- phyloseq_coverage_raref(physeq = ps_unrarefied_Animalia, 
-                                            iter = 1, coverage = 0.98, drop_lowcoverage = T)
-Coverage_Animalia <- phyloseq_coverage(physeq = ps_unrarefied_Animalia)
-Coverage_Animalia <- phyloseq_coverage(physeq = ps_rarefied_Animalia)
-
-seqtab_rarefied_Animalia <- as.data.frame(ps_rarefied_Animalia@otu_table)
-plot_12S <- plot_richness(ps_rarefied_Animalia, x="Zone", measures=c("Observed", "Shannon"), color="Zone") + 
-  geom_boxplot(outlier.shape = NA)
-plot_12S
-
-rarecurve(t(table_unrarefied_Animalia), ylab = "Animalia ASVs", 
-          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
-          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-rarecurve(seqtab_rarefied_Animalia, ylab = "Animalia ASVs", 
-          main = "Rarecurve of unrarefied samples after taxonomic assignment", 
-          col = as.vector(env_12S$Environment_color), label = FALSE, step =100)
-
 
 #plot_12S <- plot_richness(ps_12S, x="Area", measures=c("Observed", "Shannon"), color="Area") + 
   #geom_boxplot(outlier.shape = NA)
@@ -247,9 +238,39 @@ rownames(smpl_morph_Fish) <- colnames(ps_morph_Fish)
 Taxonomy_morph_Fish <- rownames(table_morph_Fish_2)
 Taxonomy_morph_Fish <- as.matrix(Taxonomy_morph_Fish)
 rownames(Taxonomy_morph_Fish) <- rownames(ps_morph_Fish)
-#ps_morph_Fish <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE), sample_data(smpl_morph_Fish),tax_table(Taxonomy_morph_Fish))
+ps_morph_Fish_1 <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE), sample_data(smpl_morph_Fish),tax_table(Taxonomy_morph_Fish))
+Coverage_morph_Fish <- phyloseq_coverage(physeq = ps_morph_Fish_1)
 #plot_richness(ps_morph_Fish, x="Area", measures=c("Observed", "Shannon"), color="Area") + 
   #geom_boxplot(outlier.shape = NA)
+
+iNext_Fish_morph <- iNEXT(ps_morph_Fish, q=c(0,1), datatype="abundance", knot = 40)
+g_Fish_morph <- ggiNEXT(iNext_Fish_morph, type=3, se=TRUE, grey=FALSE, facet.var="Order.q")
+g_Fish_morph_2 <- g_Fish_morph + 
+  scale_colour_manual(values=c(smpl_morph_Fish$Zone_color)) +
+  scale_fill_manual(values=c(smpl_morph_Fish$Zone_color)) +
+  scale_shape_manual(values=c(rep(20, times = 22))) +
+  theme(legend.text = element_text(size = 9.5)) 
+g_Fish_morph_2
+
+Fish_Diversity_morph_morph <- as.data.frame(iNext_Fish_morph$iNextEst$coverage_based[
+  which(iNext_Fish_morph$iNextEst$coverage_based$Order.q == 0),])
+Fish_Diversity_morph_morph <- as.data.frame(Fish_Diversity_morph_morph[Fish_Diversity_morph_morph$SC > 0.9598690,])
+Fish_Diversity_morph_morph_2 <- aggregate(Fish_Diversity_morph_morph,
+                                    by= list(as.factor(Fish_Diversity_morph_morph[,"Assemblage"])), FUN=min)
+#Fish_Diversity_morph_morph_2$Method <- ifelse(Fish_Diversity_morph_morph_2$Assemblage == "ftWG2_5", "Observed", "Rarefaction")
+
+env_morph$Niskin.sample <- str_replace(env_morph$Niskin.sample, "_DYF_NJ2021", "") 
+Coast_morph <- c(Fish_Diversity_morph_morph_2$qD[
+  Fish_Diversity_morph_morph_2$Assemblage %in% env_morph$Niskin.sample[env_morph$Zones == "Coastal"]])
+Transition_morph <- c(Fish_Diversity_morph_morph_2$qD[
+  Fish_Diversity_morph_morph_2$Assemblage %in% env_morph$Niskin.sample[env_morph$Zones == "zone1"]])
+Offshore_morph <- c(Fish_Diversity_morph_morph_2$qD[
+  Fish_Diversity_morph_morph_2$Assemblage %in% env_morph$Niskin.sample[env_morph$Zones == "zone2"]])
+
+boxplot(Coast_morph, Transition_morph, Offshore_morph,
+        main="Average number of species per Zone", ylab ="Number of species", 
+        names = c("Coast", "Transition", "Offshore"),
+        col=c("limegreen", "slateblue" , "darkorange"))
 
 #Morphology-Invertebrates
 ps_morph_Inv <- table_morph_Inv_2
@@ -263,9 +284,20 @@ rownames(smpl_morph_Inv) <- colnames(ps_morph_Inv)
 Taxonomy_morph_Inv <- rownames(table_morph_Inv_2)
 Taxonomy_morph_Inv <- as.matrix(Taxonomy_morph_Inv)
 rownames(Taxonomy_morph_Inv) <- rownames(ps_morph_Inv)
-#ps_morph_Inv <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE), sample_data(smpl_morph_Inv),tax_table(Taxonomy_morph_Inv))
+ps_morph_Inv_1 <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE), sample_data(smpl_morph_Inv),tax_table(Taxonomy_morph_Inv))
 #plot_morph_Inv <- plot_richness(ps_morph_Inv, x="Area", measures=c("Observed", "Shannon")) + 
   #geom_boxplot(outlier.shape = NA)
+Coverage_morph_Inv <- phyloseq_coverage(physeq = ps_morph_Inv_1)
+
+iNext_Inv_morph <- iNEXT(ps_morph_Inv, q=c(0,1), datatype="abundance", knot = 40)
+g_Inv_morph <- ggiNEXT(iNext_Inv_morph, type=1, se=TRUE, grey=FALSE, facet.var="Order.q")
+g_Inv_morph_2 <- g_Inv_morph + 
+  scale_colour_manual(values=c(smpl_morph_Inv$Zone_color)) +
+  scale_fill_manual(values=c(smpl_morph_Inv$Zone_color)) +
+  scale_shape_manual(values=c(rep(20, times = 22))) +
+  theme(legend.text = element_text(size = 9.5)) 
+g_Inv_morph_2
+
 
 #Morphology-Standerdized
 ps_morph_Fish_Std <- as.data.frame(table_morph_Fish_Std_2)
@@ -689,16 +721,22 @@ seqtab_unrarefied_Fish <- aggregate(seqtab_unrarefied_Fish[,1:(ncol(seqtab_unrar
                                     by= list(as.factor(seqtab_unrarefied_Fish[,"Zone"])),FUN=mean)
 rownames(seqtab_unrarefied_Fish) <- seqtab_unrarefied_Fish$Group.1
 seqtab_unrarefied_Fish$Group.1 <- NULL
-seqtab_unrarefied_Fish <- format(round(seqtab_unrarefied_Fish, 0), nsmall = 0)
+for (r in 1:nrow(seqtab_unrarefied_Fish)) {
+  for (c in 1:ncol(seqtab_unrarefied_Fish)){
+    seqtab_unrarefied_Fish[r,c] <- as.numeric(format(round(c(seqtab_unrarefied_Fish[r,c]), 0), nsmall = 0))
+  }
+}
+
 iNext_Fish_Zone <- iNEXT(t(seqtab_unrarefied_Fish), q=c(0,1), datatype="abundance", knot = 20)
-ggiNEXT(iNext_Fish_Zone, type=1, se=TRUE, grey=FALSE, facet.var = "Order.q")
+ggiNEXT(iNext_Fish_Zone, type=3, se=TRUE, grey=FALSE, facet.var = "Order.q")
 
 ps_Fish_Zone <- phyloseq(otu_table(t(seqtab_unrarefied_Fish), taxa_are_rows = TRUE))
 Coverage_Fish_Zone <- phyloseq_coverage(physeq = ps_Fish_Zone)
 
 seqtab_unrarefied_Inv <- as.data.frame(t(ps_Inv))
 seqtab_unrarefied_Inv$Zone <- smpl_Inv$Zone
-seqtab_unrarefied_Inv <- aggregate(seqtab_unrarefied_Inv[,1:(ncol(seqtab_unrarefied_Inv)-1)], by= list(as.factor(seqtab_unrarefied_Inv[,"Zone"])),FUN=sum)
+seqtab_unrarefied_Inv <- aggregate(seqtab_unrarefied_Inv[,1:(ncol(seqtab_unrarefied_Inv)-1)], 
+                                   by= list(as.factor(seqtab_unrarefied_Inv[,"Zone"])),FUN=sum)
 rownames(seqtab_unrarefied_Inv) <- seqtab_unrarefied_Inv$Group.1
 seqtab_unrarefied_Inv$Group.1 <- NULL
 iNext_Inv_Zone <- iNEXT(t(seqtab_unrarefied_Inv), q=c(0), datatype="abundance")
@@ -706,6 +744,39 @@ ggiNEXT(iNext_Inv_Zone, type=1, se=TRUE, grey=FALSE)
 
 ps_Inv_Zone <- phyloseq(otu_table(t(seqtab_unrarefied_Inv), taxa_are_rows = TRUE))
 Coverage_Inv_Zone <- phyloseq_coverage(physeq = ps_Inv_Zone)
+
+seqtab_morph_Fish <- as.data.frame(t(ps_morph_Fish))
+seqtab_morph_Fish$Zone <- smpl_morph_Fish$Zones
+seqtab_morph_Fish <- aggregate(seqtab_morph_Fish[,1:(ncol(seqtab_morph_Fish)-1)], 
+                                   by= list(as.factor(seqtab_morph_Fish[,"Zone"])),FUN=mean)
+rownames(seqtab_morph_Fish) <- seqtab_morph_Fish$Group.1
+seqtab_morph_Fish$Group.1 <- NULL
+for (r in 1:nrow(seqtab_morph_Fish)) {
+  for (c in 1:ncol(seqtab_morph_Fish)){
+    seqtab_morph_Fish[r,c] <- as.numeric(format(round(c(seqtab_morph_Fish[r,c]), 0), nsmall = 0))
+  }
+}
+
+iNext_Fish_morph_Zone <- iNEXT(t(seqtab_morph_Fish), q=c(0,1), datatype="abundance", knot = 40)
+ggiNEXT(iNext_Fish_morph_Zone, type=1, se=TRUE, grey=FALSE, facet.var="Order.q")
+
+
+seqtab_morph_Inv <- as.data.frame(t(ps_morph_Inv))
+seqtab_morph_Inv$Zone <- smpl_morph_Inv$Zones
+seqtab_morph_Inv <- aggregate(seqtab_morph_Inv[,1:(ncol(seqtab_morph_Inv)-1)], 
+                               by= list(as.factor(seqtab_morph_Inv[,"Zone"])),FUN=mean)
+rownames(seqtab_morph_Inv) <- seqtab_morph_Inv$Group.1
+seqtab_morph_Inv$Group.1 <- NULL
+for (r in 1:nrow(seqtab_morph_Inv)) {
+  for (c in 1:ncol(seqtab_morph_Inv)){
+    seqtab_morph_Inv[r,c] <- as.numeric(format(round(c(seqtab_morph_Inv[r,c]), 0), nsmall = 0))
+  }
+}
+
+iNext_Inv_morph_Zone <- iNEXT(t(seqtab_morph_Inv), q=c(0,1), datatype="abundance", knot = 40)
+ggiNEXT(iNext_Inv_morph_Zone, type=3, se=TRUE, grey=FALSE, facet.var="Order.q")
+
+
 
 #keep the samples in the three zones separate
 install.packages("remotes")
