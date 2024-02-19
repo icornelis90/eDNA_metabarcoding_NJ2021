@@ -38,11 +38,13 @@ proj.path.12S <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFi
 proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 #upload data
-table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/table_unrarefied_concatenated_CleanedASVs_WithField_FullTaxonomicAssignment.xlsx"))
+#table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/table_unrarefied_concatenated_CleanedASVs_WithField_FullTaxonomicAssignment.xlsx"))
+table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 #table_unrarefied_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/table_rarefied_CleanedASVs_WithField_FullTaxonomicAssignment.xlsx"))
-table_morph_12S <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Fish")
+table_morph_12S <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish")
 table_morph_12S_Standerdized <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
-table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/Decontam/table_unrarefied_concatenated_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
+#table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/Decontam/table_unrarefied_concatenated_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
+table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
 #table_unrarefied_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results/table_rarefied_CleanedASVs_FullTaxonomicAssignment_WithField.xlsx"))
 table_morph_COI <- readxl::read_excel(paste0(proj.path.COI,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Epi")
 table_morph_COI_Standerdized <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
@@ -53,15 +55,15 @@ env_COI <- read.csv(paste0(proj.path.COI,"/Step5_Statistics/environmental_data_O
 env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
 
 #add color and pch to environmental data to create the plot 
-env_12S$Environment_color <- ifelse(env_12S$Zones=="Coastal","limegreen", 
-                                ifelse(env_12S$Zones=="zone1", "slateblue", 
-                                       ifelse(env_12S$Zones=="zone2","darkorange","red")))
+env_12S$Environment_color <- ifelse(env_12S$Zone=="Coast","limegreen", 
+                                ifelse(env_12S$Zone=="Transition", "slateblue", 
+                                       ifelse(env_12S$Zone=="Offshore","darkorange","red")))
 env_COI$Environment_color <- ifelse(env_COI$Zones=="Coastal","limegreen", 
                                     ifelse(env_COI$Zones=="zone1", "slateblue", 
                                            ifelse(env_COI$Zones=="zone2","darkorange","red")))
-env_morph$Environment_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
-                                      ifelse(env_morph$Zones=="zone1", "slateblue", 
-                                             ifelse(env_morph$Zones=="zone2","darkorange","red")))
+env_morph$Environment_color <- ifelse(env_morph$Zone=="Coast","limegreen", 
+                                      ifelse(env_morph$Zone=="Transition", "slateblue", 
+                                             ifelse(env_morph$Zone=="Offshore","darkorange","red")))
 
 #morphological data
 table_morph_12S_2 <- as.data.frame(table_morph_12S[,2:ncol(table_morph_12S)])
@@ -99,9 +101,10 @@ merged_data_unrarefied_12S$Group.1 <- NULL
 
 #select Invertebrate species and merge by species
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_COI[table_unrarefied_COI$Kingdom %in% c("Animalia"),])
-table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Full %in% "NA",])
+table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Species %in% "NA",])
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Phylum %in% "Chordata",])
-taxo <- "Full"
+taxo <- "Species"
+#taxo <- "Full"
 merged_data_unrarefied_Animalia <- aggregate(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
 rownames(merged_data_unrarefied_Animalia) <-as.character(merged_data_unrarefied_Animalia$Group.1)
 merged_data_unrarefied_Animalia$Group.1 <- NULL
@@ -137,7 +140,7 @@ ps_COI <- merged_data_unrarefied_Animalia
 smpl_COI <- env_unrarefied_COI
 #smpl_COI$Area <- paste(smpl_COI$Environment, smpl_COI$Zones, sep="_")
 #smpl_COI$Area <- ifelse(smpl_COI$Area=="Coastal_Coastal","Coastal", smpl_COI$Area)
-smpl_COI$Area <- ifelse(smpl_COI$Zones=="Coastal","Coast", 
+smpl_COI$Zone <- ifelse(smpl_COI$Zones=="Coastal","Coast", 
                         ifelse(smpl_COI$Zones=="zone1", "Transition", 
                                ifelse(smpl_COI$Zones=="zone2","Offshore","red")))
 rownames(smpl_COI) <- colnames(ps_COI)
@@ -286,14 +289,14 @@ Taxonomy_all <- as.matrix(rownames(ps_all))
 rownames(Taxonomy_all) <- rownames(ps_all)
 
 ps_all_phylo <- phyloseq(otu_table(ps_all , taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
-p_all <- plot_richness(ps_all_phylo, x='Area', measures=c("Observed", "Shannon")) + 
+p_all <- plot_richness(ps_all_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
   scale_fill_manual(values=c("darkolivegreen3", "lightblue3")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
 p_all$layers <- p_all$layers[-1]
-p_all$data$Area <- factor(p_all$data$Area, levels=unique(smpl_12S$Area))
+p_all$data$Area <- factor(p_all$data$Zone, levels=unique(smpl_12S$Area))
 p_all
 
 ##Statistical analysis - Fish
