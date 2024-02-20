@@ -46,10 +46,10 @@ proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 ###upload data
 table_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
+table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish")
 
 table_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
+table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi")
 
 env_12S_all <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 env_COI_all <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
@@ -136,13 +136,13 @@ eDNA_Fish_Diversity <- estimateD(ps_eDNA_Fish, datatype="abundance", base="cover
                             level=min(Coverage_eDNA_Fish$SampleCoverage[
                               which(Coverage_eDNA_Fish$SampleCoverage > 0.5)] ),
                             conf=0.95) #select the minimum coverage
-eDNA_Fish_Diversity_100 <- estimateD(ps_eDNA_Fish, datatype="abundance",
-                                base="coverage", level=1, conf=0.95)
+eDNA_Fish_Diversity_morph <- estimateD(ps_eDNA_Fish, datatype="abundance",
+                                base="coverage", level=0.9419454, conf=0.95)
 
 ##Rarefy the data based on a coverage just below the minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage will remove the sample from the rarefied dataset)
 ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, 
-                                           iter = 1, coverage = 0.998, drop_lowcoverage = T)
+                                           iter = 1, coverage = 0.965, drop_lowcoverage = T)
 table_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
 
 ##Optional: plot the rarefied and unrarefied data for visualization 
@@ -191,8 +191,8 @@ eDNA_Inv_Diversity <- estimateD(ps_eDNA_Inv, datatype="abundance", base="coverag
                            conf=0.95) #select the minimum coverage
 eDNA_Inv_Diversity_rare <- estimateD(ps_eDNA_Inv, datatype="abundance", base="coverage",
                                 level=0.97, conf=0.95) #coverage used for rarefaction, with a lower coverage we get an error
-eDNA_Inv_Diversity_100 <- estimateD(ps_eDNA_Inv, datatype="abundance", base="coverage",
-                                level=1, conf=0.95)
+eDNA_Inv_Diversity_morph <- estimateD(ps_eDNA_Inv, datatype="abundance", base="coverage",
+                                level=0.9231302, conf=0.95)
 
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage that will not generate an error)
@@ -238,12 +238,17 @@ ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE),
 ##Calculate the Coverage
 Coverage_morph_Fish <- phyloseq_coverage(physeq = ps_morph_Fish_phylo)
 
+##Estimate the diversity based on the minimum coverage with a value > 0.5
+morph_Fish_Diversity <- estimateD(ps_morph_Fish, datatype="abundance", base="coverage",
+                                 level=min(Coverage_morph_Fish$SampleCoverage[
+                                   which(Coverage_morph_Fish$SampleCoverage > 0.5)] ),
+                                 conf=0.95) #select the minimum coverage
+
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage that will not generate an error)
 ps_morph_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_morph_Fish_phylo, 
-                                                 iter = 1, coverage = 0.998, drop_lowcoverage = T)
+                                                 iter = 1, coverage = 0.965, drop_lowcoverage = T)
 table_morph_rarefied_Fish <- as.data.frame(ps_morph_rarefied_Fish@otu_table)
-
 
 ###Prepare the Morphological data for the epibenthos catch 
 ## Create a phyloseq object
@@ -259,10 +264,51 @@ ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE),
 ##Calculate the Coverage
 Coverage_morph_Inv <- phyloseq_coverage(physeq = ps_morph_Inv_phylo)
 
+##Estimate the diversity based on the minimum coverage with a value > 0.5
+morph_Inv_Diversity <- estimateD(ps_morph_Inv, datatype="abundance", base="coverage",
+                                  level=min(Coverage_morph_Inv$SampleCoverage[
+                                    which(Coverage_morph_Inv$SampleCoverage > 0.5)] ),
+                                  conf=0.95) #select the minimum coverage
+
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ps_morph_rarefied_Inv <- phyloseq_coverage_raref(physeq = ps_morph_Inv_phylo, 
                                                   iter = 1, coverage = 0.97, drop_lowcoverage = T)
 table_morph_rarefied_Inv <- as.data.frame(ps_morph_rarefied_Inv@otu_table)
+
+###create a boxplot using the estimatedD based on the lowest coverage for Fish and Inv
+box_rarefied <- as.data.frame(c(eDNA_Fish_Diversity_morph$qD,
+                                morph_Fish_Diversity$qD,
+                                eDNA_Inv_Diversity_morph$qD,
+                                morph_Inv_Diversity$qD))
+colnames(box_rarefied) <- 'SpRichness'
+box_rarefied$Richness <- c(eDNA_Fish_Diversity_morph$Order.q,
+                             morph_Fish_Diversity$Order.q,
+                             eDNA_Inv_Diversity_morph$Order.q,
+                             morph_Inv_Diversity$Order.q)
+box_rarefied$Richness <- ifelse(box_rarefied$Richness == 0, "Observed",
+                                ifelse(box_rarefied$Richness == 1, "Shannon", "Hill"))
+box_rarefied$Method <- c(rep("eDNA", ncol(ps_eDNA_Fish)), 
+                         rep("Morphology", ncol(ps_morph_Fish)),
+                         rep("eDNA", ncol(ps_eDNA_Inv)),
+                         rep("Morphology", ncol(ps_morph_Inv)))
+box_rarefied$Organism <- c(rep("Fish", ncol(ps_eDNA_Fish)), 
+                         rep("Fish", ncol(ps_morph_Fish)),
+                         rep("Invertebrates", ncol(ps_eDNA_Inv)),
+                         rep("Invertebrates", ncol(ps_morph_Inv)))
+box_rarefied$Zone <- c(smpl_eDNA_Fish$Zone, 
+                       smpl_morph_Fish_raw$Zone,
+                       smpl_eDNA_Inv$Zone,
+                       smpl_morph_Inv_raw$Zone)
+
+box_plot_rarefied <- ggplot(box_rarefied[which(box_rarefied$Richness %in% c("Observed", "Shannon")),], 
+                            aes(x = Zone, y = SpRichness)) + 
+  geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) +
+  scale_fill_manual(values=c("darkolivegreen3", "lightblue3")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  facet_grid(Richness~Organism, scales = "free")
+box_plot_rarefied
+  
 
 ###Analyze the observed diversity and Shannon diversity index for all data 
 ##Prepare the smpl matrix for the combined fish data
