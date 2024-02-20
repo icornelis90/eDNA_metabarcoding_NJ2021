@@ -142,7 +142,7 @@ eDNA_Fish_Diversity_morph <- estimateD(ps_eDNA_Fish, datatype="abundance",
 ##Rarefy the data based on a coverage just below the minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage will remove the sample from the rarefied dataset)
 ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, 
-                                           iter = 1, coverage = 0.965, drop_lowcoverage = T)
+                                           iter = 1, coverage = 0.998, drop_lowcoverage = T)
 table_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
 
 ##Optional: plot the rarefied and unrarefied data for visualization 
@@ -333,11 +333,12 @@ smpl_Fish$Method <- c(rep("eDNA_unrarefied", nrow(smpl_eDNA_Fish_unrarefied)),
 smpl_Fish$Organism <- sub(".*_","",rownames(smpl_Fish))
 
 ##Prepare the abundance table for the combined fish data
-ps_eDNA_Fish_unrarefied <- table_unrarefied_Fish
+ps_eDNA_Fish_unrarefied <- table_unrarefied_Fish[,colnames(table_unrarefied_Fish) %in% env_12S$Niskin.sample]
 ps_eDNA_Fish_rarefied <- table_rarefied_Fish
 ps_morph_Fish_2 <- ps_morph_Fish
 
-colnames(ps_eDNA_Fish_unrarefied) <- paste(colnames(table_unrarefied_Fish), 
+colnames(ps_eDNA_Fish_unrarefied) <- paste(colnames(table_unrarefied_Fish
+                                                    [,colnames(table_unrarefied_Fish) %in% env_12S$Niskin.sample]), 
                                      "eDNA_unrarefied_Fish", sep="_")
 colnames(ps_eDNA_Fish_rarefied) <- paste(colnames(table_rarefied_Fish),
                                    "eDNA_rarefied_Fish", sep="_")
@@ -352,7 +353,7 @@ Taxonomy_Fish <- as.matrix(rownames(ps_Fish))
 rownames(Taxonomy_Fish) <- rownames(ps_Fish)
 
 #ps_Fish <- phyloseq(otu_table(ps_Fish, taxa_are_rows = TRUE), sample_data(smpl_Fish),tax_table(Taxonomy_Fish))
-#p <- plot_richness(ps_Fish, x="Area", measures=c("Observed", "Shannon")) + 
+#p <- plot_richness(ps_Fish, x="Zone", measures=c("Observed", "Shannon")) + 
   #geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
   #scale_fill_manual(values=c("lightblue3", "darkolivegreen3")) +
   #theme(axis.text.x=element_text(color = c("limegreen","slateblue1","darkorange", "slateblue", "darkorange3")))
@@ -381,11 +382,12 @@ smpl_Inv$Method <- c(rep("eDNA_unrarefied", nrow(smpl_eDNA_Inv_unrarefied)),
 smpl_Inv$Organism <- "Invertebrates"
 
 ##Prepare the abundance table for the combined invertebrate data
-ps_eDNA_Inv_unrarefied <- table_unrarefied_Inv
+ps_eDNA_Inv_unrarefied <- table_unrarefied_Inv[,colnames(table_unrarefied_Inv) %in% env_COI$Niskin.sample]
 ps_eDNA_Inv_rarefied <- table_rarefied_Inv
 ps_morph_Inv_2 <- ps_morph_Inv
 
-colnames(ps_eDNA_Inv_unrarefied) <- paste(colnames(table_unrarefied_Inv), 
+colnames(ps_eDNA_Inv_unrarefied) <- paste(colnames(table_unrarefied_Inv
+                                                   [,colnames(table_unrarefied_Inv) %in% env_COI$Niskin.sample]), 
                                            "eDNA_unrarefied_Inv", sep="_")
 colnames(ps_eDNA_Inv_rarefied) <- paste(colnames(table_rarefied_Inv),
                                          "eDNA_rarefied_Inv", sep="_")
@@ -400,7 +402,7 @@ Taxonomy_Inv <- as.matrix(rownames(ps_Inv))
 rownames(Taxonomy_Inv) <- rownames(ps_Inv)
 
 #ps_Inv <- phyloseq(otu_table(ps_Inv , taxa_are_rows = TRUE), sample_data(smpl_Inv ),tax_table(Taxonomy_Inv))
-#p_Inv <- plot_richness(ps_Inv, x="Area", measures=c("Observed", "Shannon")) + 
+#p_Inv <- plot_richness(ps_Inv, x="Zone", measures=c("Observed", "Shannon")) + 
   #geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
   #scale_fill_manual(values=c("lightblue3", "darkolivegreen3")) +
   #theme(axis.text.x=element_text(color = c("limegreen","slateblue1","darkorange", "slateblue", "darkorange3")))
@@ -439,34 +441,29 @@ library(lsr)
 DNA_species <- smpl_Fish
 NumOfSp_Fish <- data.frame(colSums(ps_Fish>0))
 DNA_species$NumOfSp <- colSums(ps_Fish>0)
-NumOfSp_Fish$Area <- DNA_species$Area
-colnames(NumOfSp_Fish) <- c("NumOfSp", "Area")
+NumOfSp_Fish$Zone <- DNA_species$Zone
+colnames(NumOfSp_Fish) <- c("NumOfSp", "Zone")
 
-model_DNA <- lm(NumOfSp ~ Area, data=DNA_species) 
-model_DNA2 <- lm(NumOfSp ~ Method, data=DNA_species) 
-model_DNA3 <- lm(NumOfSp ~ Area*Method, data=DNA_species)
+#model_DNA <- lm(NumOfSp ~ Zone, data=DNA_species, family=poisson)
+model_DNA <- lm(NumOfSp ~ Zone*Method, data=DNA_species)
+model_DNA2 <- glm(NumOfSp ~ Zone*Method, data=DNA_species, family=poisson) 
+
 anova_DNA <- Anova(model_DNA, type=2)# SIGN for station , not sign for biological replicates
 summary(model_DNA)
 anova_DNA
 anova_DNA2 <- Anova(model_DNA2, type=2)# SIGN for station , not sign for biological replicates
 summary(model_DNA2)
 anova_DNA2
-anova_DNA3 <- Anova(model_DNA3, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA3)
-anova_DNA3
-PostHocTest(aov(NumOfSp ~ Area, data=DNA_species), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Method, data=DNA_species), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Area*Method, data=DNA_species), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species), method = "hsd")
 
-es <- etaSquared(model_DNA3, type=2, anova=TRUE)
+es <- etaSquared(model_DNA2, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 1
+sum(es[,"eta.sq"]) # 0.948
 
 library(lsmeans)
 library(multcomp)
-cld(lsmeans(model_DNA, ~ Area), Letters=letters)
-cld(lsmeans(model_DNA2, ~ Method), Letters=letters)
-cld(lsmeans(model_DNA3, ~ Area*Method), Letters=letters)
+cld(lsmeans(model_DNA, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_DNA2, ~ Zone*Method), Letters=letters)
 #elk station in ander groep!
 #lstrends(model_DNA, "Station", var="NR") #lstrends: moet continue zijn + volgorde belangrijk => DUS HIER NIET GEBRUIKEN
 #DNA_species_2$NR <- as.numeric(as.factor(DNA_species_2$Biologic_replicate))
@@ -475,19 +472,15 @@ cld(lsmeans(model_DNA3, ~ Area*Method), Letters=letters)
 #homogeneity
 plot(model_DNA, 1)
 plot(model_DNA2, 1)
-plot(model_DNA3, 1)
 #leveneTest(NumOfSp ~ Station, data=DNA_species) # SIGNIFICANT (but only on edges)
-leveneTest(NumOfSp ~ Area, data=DNA_species) # SIGNIFICANT (but only on edges)
-leveneTest(NumOfSp ~ Method, data=DNA_species)
-leveneTest(NumOfSp ~ Area*Method, data=DNA_species)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species)
 
 #normality
-resid <- residuals(model_DNA3)  # pull the residuals
+resid <- residuals(model_DNA1)  # pull the residuals
 hist(resid)
 qqnorm(resid) 
 plot(model_DNA, 2)
 plot(model_DNA2, 2)
-plot(model_DNA3, 2)
 ggqqplot(DNA_species$NumOfSp)
 shapiro.test(DNA_species$NumOfSp)  # NOT SIGNIFICANT
 shapiro.test(resid)
@@ -500,89 +493,77 @@ bc$x[which(bc$y==max(bc$y))]
 
 #Shannon diversity
 DNA_Shannon<- smpl_Fish
-Shannon_Fish <- data.frame(diversity(ps_Fish, "shannon"))
-Shannon_Fish$Area <- DNA_Shannon$Area
-colnames(Shannon_Fish) <- c("Shannon", "Area")
+Shannon_Fish <- data.frame(diversity(t(ps_Fish), "shannon"))
+Shannon_Fish$Zone <- DNA_Shannon$Zone
+colnames(Shannon_Fish) <- c("Shannon", "Zone")
 DNA_Shannon$Shannon <- Shannon_Fish$Shannon
 
-model_Shannon <- lm(Shannon ~ Area, data=DNA_Shannon)
-model_Shannon2 <- lm(Shannon ~ Method, data=DNA_Shannon)
-model_Shannon3 <- lm(Shannon ~ Area*Method, data=DNA_Shannon)
+model_Shannon <- lm(Shannon ~ Zone*Method, data=DNA_Shannon)
+model_Shannon2 <- glm(Shannon ~ Zone*Method, data=DNA_Shannon, family = poisson)
 anova_Shannon <- Anova(model_Shannon, type=2)# SIGN for station , not sign for biological replicates
 summary(model_Shannon)
 anova_Shannon
 anova_Shannon2 <- Anova(model_Shannon2, type=2)# SIGN for station , not sign for biological replicates
 summary(model_Shannon2)
 anova_Shannon2
-anova_Shannon3 <- Anova(model_Shannon3, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon3)
-anova_Shannon3
-PostHocTest(aov(Shannon ~ Area, data=DNA_Shannon), method = "hsd")
-PostHocTest(aov(Shannon ~ Method, data=DNA_Shannon), method = "hsd")
-PostHocTest(aov(Shannon ~ Area*Method, data=DNA_Shannon), method = "hsd")
+PostHocTest(aov(Shannon ~ Zone*Method, data=DNA_Shannon), method = "hsd")
 
-es_Shannon <- etaSquared(model_Shannon3, type=2, anova=TRUE)
+es_Shannon <- etaSquared(model_Shannon2, type=2, anova=TRUE)
 es_Shannon
-sum(es_Shannon[,"eta.sq"]) # 1
+sum(es_Shannon[,"eta.sq"]) # 0.772
 
-cld(lsmeans(model_Shannon, ~ Area), Letters=letters)
-cld(lsmeans(model_Shannon2, ~ Method), Letters=letters)
-cld(lsmeans(model_Shannon3, ~ Area*Method), Letters=letters) #elk station in ander groep!
+cld(lsmeans(model_Shannon, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_Shannon2, ~ Zone*Method), Letters=letters)
 
 #check assumptions
 #homogeneity
-plot(model_Shannon3, 1)
-leveneTest(Shannon ~ Area, data=DNA_Shannon) # SIGNIFICANT (but only on edges)
+plot(model_Shannon2, 1)
+leveneTest(Shannon ~ Zone, data=DNA_Shannon) # SIGNIFICANT (but only on edges)
 leveneTest(Shannon ~ Method, data=DNA_Shannon)
-leveneTest(Shannon ~ Area*Method, data=DNA_Shannon)
+leveneTest(Shannon ~ Zone*Method, data=DNA_Shannon)
 
 #normality
-resid_Shannon <- residuals(model_Shannon3)  # pull the residuals
+resid_Shannon <- residuals(model_Shannon2)  # pull the residuals
 hist(resid_Shannon)
 qqnorm(resid_Shannon) 
 plot(model_Shannon, 2)
 plot(model_Shannon2, 2)
-plot(model_Shannon3, 2)
-ggqqplot(DNA_species$NumOfSp)
-shapiro.test(DNA_species$NumOfSp)  # NOT SIGNIFICANT
+ggqqplot(DNA_Shannon$Shannon)
+shapiro.test(DNA_Shannon$Shannon)  # NOT SIGNIFICANT
 shapiro.test(resid_Shannon)
-shapiro.test(1/(DNA_species$NumOfSp))
+shapiro.test(1/(DNA_Shannon$Shannon))
 
-boxcox(model_Shannon3)
-bc<-boxcox(model_Shannon3)
-bc$x[which(bc$y==max(bc$y))]
+boxcox(model_Shannon2)
+bc<-boxcox(model_Shannon2)
+bc$x[which(bc$y==max(bc$y))] 1.19
 
 ##Statistical analysis - Invertebrates
 #Alpha diversity
 DNA_species <- smpl_Inv
 NumOfSp_Inv <- data.frame(colSums(ps_Inv>0))
 DNA_species$NumOfSp <- colSums(ps_Inv>0)
-NumOfSp_Inv$Area <- DNA_species$Area
-colnames(NumOfSp_Inv) <- c("NumOfSp", "Area")
+NumOfSp_Inv$Zone <- DNA_species$Zone
+colnames(NumOfSp_Inv) <- c("NumOfSp", "Zone")
 
-model_DNA <- lm(NumOfSp ~ Area, data=DNA_species) 
-model_DNA2 <- lm(NumOfSp ~ Method, data=DNA_species) 
-model_DNA3 <- lm(NumOfSp ~ Area*Method, data=DNA_species)
+model_DNA <- lm(NumOfSp ~ Zone*Method, data=DNA_species) 
+model_DNA2 <- glm(NumOfSp ~ Zone*Method, data=DNA_species, family = poisson) 
 anova_DNA <- Anova(model_DNA, type=2)# SIGN for station , not sign for biological replicates
 summary(model_DNA)
 anova_DNA
 anova_DNA2 <- Anova(model_DNA2, type=2)# SIGN for station , not sign for biological replicates
 summary(model_DNA2)
 anova_DNA2
-anova_DNA3 <- Anova(model_DNA3, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA3)
-anova_DNA3
-PostHocTest(aov(NumOfSp ~ Area, data=DNA_species), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species), method = "hsd")
 PostHocTest(aov(NumOfSp ~ Method, data=DNA_species), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Area*Method, data=DNA_species), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species), method = "hsd")
 
-es <- etaSquared(model_DNA3, type=2, anova=TRUE)
+es <- etaSquared(model_DNA2, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 1
+sum(es[,"eta.sq"]) # 0.9489
 
-cld(lsmeans(model_DNA, ~ Area), Letters=letters)
-cld(lsmeans(model_DNA2, ~ Method), Letters=letters)
-cld(lsmeans(model_DNA3, ~ Area*Method), Letters=letters)
+cld(lsmeans(model_DNA, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_DNA2, ~ Zone*Method), Letters=letters)
+
 #elk station in ander groep!
 #lstrends(model_DNA, "Station", var="NR") #lstrends: moet continue zijn + volgorde belangrijk => DUS HIER NIET GEBRUIKEN
 #DNA_species_2$NR <- as.numeric(as.factor(DNA_species_2$Biologic_replicate))
@@ -591,81 +572,72 @@ cld(lsmeans(model_DNA3, ~ Area*Method), Letters=letters)
 #homogeneity
 plot(model_DNA, 1)
 plot(model_DNA2, 1)
-plot(model_DNA3, 1)
 #leveneTest(NumOfSp ~ Station, data=DNA_species) # SIGNIFICANT (but only on edges)
-leveneTest(NumOfSp ~ Area, data=DNA_species) # SIGNIFICANT (but only on edges)
+leveneTest(NumOfSp ~ Zone, data=DNA_species) # SIGNIFICANT (but only on edges)
 leveneTest(NumOfSp ~ Method, data=DNA_species)
-leveneTest(NumOfSp ~ Area*Method, data=DNA_species)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species)
 
 #normality
-resid <- residuals(model_DNA3)  # pull the residuals
+resid <- residuals(model_DNA2)  # pull the residuals
 hist(resid)
 qqnorm(resid) 
 plot(model_DNA, 2)
 plot(model_DNA2, 2)
-plot(model_DNA3, 2)
 ggqqplot(DNA_species$NumOfSp)
 shapiro.test(DNA_species$NumOfSp)  # NOT SIGNIFICANT
 shapiro.test(resid)
 shapiro.test(1/(DNA_species$NumOfSp))
 
-library(MASS)
-boxcox(model_DNA)
-bc<-boxcox(model_DNA)
-bc$x[which(bc$y==max(bc$y))]
+boxcox(model_DNA2)
+bc<-boxcox(model_DNA2)
+bc$x[which(bc$y==max(bc$y))] #0.3838384
 
 #Shannon diversity
 DNA_Shannon <- smpl_Inv
-Shannon <- data.frame(diversity(ps_Inv, "shannon"))
-Shannon$Area <- DNA_Shannon$Area
-colnames(Shannon) <- c("Shannon", "Area")
+Shannon <- data.frame(diversity(t(ps_Inv), "shannon"))
+Shannon$Zone <- DNA_Shannon$Zone
+colnames(Shannon) <- c("Shannon", "Zone")
 DNA_Shannon$Shannon <- Shannon$Shannon
 
-model_Shannon <- lm(Shannon ~ Area, data=DNA_Shannon)
-model_Shannon2 <- lm(Shannon ~ Method, data=DNA_Shannon)
-model_Shannon3 <- lm(Shannon ~ Area*Method, data=DNA_Shannon)
+model_Shannon <- lm(Shannon ~ Zone*Method, data=DNA_Shannon)
+model_Shannon2 <- glm(Shannon ~ Zone*Method, data=DNA_Shannon, family = poisson)
 anova_Shannon <- Anova(model_Shannon, type=2)# SIGN for station , not sign for biological replicates
 summary(model_Shannon)
 anova_Shannon
 anova_Shannon2 <- Anova(model_Shannon2, type=2)# SIGN for station , not sign for biological replicates
 summary(model_Shannon2)
 anova_Shannon2
-anova_Shannon3 <- Anova(model_Shannon3, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon3)
-anova_Shannon3
-PostHocTest(aov(Shannon ~ Area, data=DNA_Shannon), method = "hsd")
+PostHocTest(aov(Shannon ~ Zone, data=DNA_Shannon), method = "hsd")
 PostHocTest(aov(Shannon ~ Method, data=DNA_Shannon), method = "hsd")
-PostHocTest(aov(Shannon ~ Area*Method, data=DNA_Shannon), method = "hsd")
+PostHocTest(aov(Shannon ~ Zone*Method, data=DNA_Shannon), method = "hsd")
 
-es_Shannon <- etaSquared(model_Shannon3, type=2, anova=TRUE)
+es_Shannon <- etaSquared(model_Shannon2, type=2, anova=TRUE)
 es_Shannon
-sum(es_Shannon[,"eta.sq"]) # 0.9924824: for only a small fraction of the variance we don’t know which of the effects in the model is responsible.
+sum(es_Shannon[,"eta.sq"]) # 1:0.9924824, 2:0.9079047: for only a small fraction of the variance we don’t know which of the effects in the model is responsible.
 
-cld(lsmeans(model_Shannon, ~ Area), Letters=letters)
-cld(lsmeans(model_Shannon2, ~ Method), Letters=letters)
-cld(lsmeans(model_Shannon3, ~ Area*Method), Letters=letters) #elk station in ander groep!
+cld(lsmeans(model_Shannon, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_Shannon2, ~ Zone*Method), Letters=letters)
 
 #check assumptions
 #homogeneity
-plot(model_Shannon3, 1)
-leveneTest(Shannon ~ Area, data=DNA_Shannon) # SIGNIFICANT (but only on edges)
+plot(model_Shannon2, 1)
+leveneTest(Shannon ~ Zone, data=DNA_Shannon) # SIGNIFICANT (but only on edges)
 leveneTest(Shannon ~ Method, data=DNA_Shannon)
-leveneTest(Shannon ~ Area*Method, data=DNA_Shannon)
+leveneTest(Shannon ~ Zone*Method, data=DNA_Shannon)
 
 #normality
-resid_Shannon <- residuals(model_Shannon3)  # pull the residuals
+resid_Shannon <- residuals(model_Shannon2)  # pull the residuals
 hist(resid_Shannon)
 qqnorm(resid_Shannon) 
 plot(model_Shannon, 2)
 plot(model_Shannon2, 2)
-plot(model_Shannon3, 2)
-ggqqplot(DNA_species$NumOfSp)
-shapiro.test(DNA_species$NumOfSp)  # NOT SIGNIFICANT
+ggqqplot(DNA_Shannon$Shannon)
+shapiro.test(DNA_Shannon$Shannon)  # NOT SIGNIFICANT
 shapiro.test(resid_Shannon)
 shapiro.test(1/(DNA_species$NumOfSp))
 
-boxcox(model_Shannon3)
-bc<-boxcox(model_Shannon3)
+boxcox(model_Shannon2)
+bc<-boxcox(model_Shannon2)
 bc$x[which(bc$y==max(bc$y))]
 
 ### Calculate relative read abundances assigned
