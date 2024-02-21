@@ -52,7 +52,13 @@ taxo <- "Species"
 merged_data_unrarefied_fish <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
 rownames(merged_data_unrarefied_fish) <- merged_data_unrarefied_fish$Group.1
 merged_data_unrarefied_fish$Group.1 <- NULL
-merged_data_unrarefied_fish <- merged_data_unrarefied_fish[,colorder]
+Fish_zero <- c(rownames(merged_data_unrarefied_fish[rowSums(merged_data_unrarefied_fish) == 0,]))
+Fish_empty <- c(colnames(merged_data_unrarefied_fish[colSums(merged_data_unrarefied_fish) == 0]))
+merged_data_unrarefied_fish <- merged_data_unrarefied_fish[!rownames(merged_data_unrarefied_fish) %in% Fish_zero,]
+merged_data_unrarefied_fish <- merged_data_unrarefied_fish[,!colnames(merged_data_unrarefied_fish) %in% Fish_empty,]
+
+env <- env[!env$Niskin.sample %in% Fish_zero,]
+
 ```
 
 
