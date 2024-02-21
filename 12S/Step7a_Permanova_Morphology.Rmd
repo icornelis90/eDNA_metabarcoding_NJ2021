@@ -30,27 +30,9 @@ proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-U
 #1 read data
 #setwd(paste0("home/genomics/icornelis/Demultiplex_Liu"))
 #upload data
-table_rarefied <- readxl::read_excel(paste0(proj.path,"/MiFish_UE-S_concatenated/results/table_rarefied_CleanedASVs_FullTaxonomicAssignment_original.xlsx"),sheet = "table_rarefied_CleanedASVs_Full")
-table_morph <- readxl::read_excel(paste0(proj.path,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Fish")
-env <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";")
+table_morph <- readxl::read_excel(paste0(proj.path,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),
+                                  sheet = "Fish - Standerdized")
 env_morph <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
-table_rarefied <- data.frame((table_rarefied), check.names = FALSE)
-
-#remove samples from environmental data that are absent from the rarefied data
-keep_samples <- c(colnames(table_rarefied))
-env_rarefied <- env[env$Niskin.sample %in% keep_samples,]
-
-#select ASVs that are assigned to Fish
-table_rarefied_FishASVs <- as.data.frame(table_rarefied[!table_rarefied$Order %in% c("NA","Thalassiosirales"),])
-
-#rm(names_DNA, names_DNA2)
-
-#3: sort by species
-taxo <- "Full"
-merged_data_rarefied_fish <- aggregate(table_rarefied_FishASVs[,1:(ncol(table_rarefied_FishASVs)-11)], by= list(as.factor(table_rarefied_FishASVs[,taxo])),FUN=sum)
-#Set the tax names as rownames
-rownames(merged_data_rarefied_fish) <- merged_data_rarefied_fish$Group.1
-merged_data_rarefied_fish$Group.1 <- NULL
 
 #Set table for morphological data
 table_morph_2 <- table_morph[,2:ncol(table_morph)]
@@ -69,15 +51,7 @@ De nodige dataframes worden gemaakt uit de ingelezen data:
 
 ```{r Needed dataframes, include=FALSE}
 library(vegan)
-#data_soorten <- as.data.frame(t(table_rarefied_FishASVs[,1:(ncol(table_rarefied_FishASVs)-11)]))
 data_soorten <- as.data.frame(t(table_morph_2))
-#data_soorten <- data_soorten[1:51,]  #niet kijken naar pooled seq
-
-keep_samples <- c(rownames(data_soorten))
-env <- env[env$Niskin.sample %in% keep_samples,]
-
-data_soorten <- data_soorten %>% filter(!grepl("neg", rownames(data_soorten)))
-env <-env %>% filter(!grepl("neg", env$Niskin.sample))
 
 replicaten_name <- rownames(data_soorten)
 
@@ -88,7 +62,7 @@ data_replicaten$Impact <- env_morph$Location
 data_replicaten$Biol_replicate <- env_morph$Biol_replicate
 data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol_replicate,sep="_")
 data_replicaten$Environment <- env_morph$Environment
-data_replicaten$Zones <- env_morph$Zones
+data_replicaten$Zone <- env_morph$Zone
 
 data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
 data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
@@ -97,15 +71,15 @@ data_replicaten$Impact <- as.factor(data_replicaten$Impact)
 data_replicaten$Impact_biol <- as.factor(data_replicaten$Impact_biol)
 data_replicaten$Biol_replicate <- as.factor(data_replicaten$Biol_replicate)
 data_replicaten$Environment <- as.factor(data_replicaten$Environment)
-data_replicaten$Zones <- as.factor(data_replicaten$Zones)
-data_replicaten$Env_Zon <- paste(data_replicaten$Environment,data_replicaten$Zones,sep="-")
+data_replicaten$Zone <- as.factor(data_replicaten$Zone)
+data_replicaten$Env_Zon <- as.factor(paste(data_replicaten$Environment,data_replicaten$Zone,sep="-"))
 
 data_replicaten_OWF$Impact <- as.factor(data_replicaten_OWF$Impact)
 data_replicaten_OWF$Impact_biol <- as.factor(data_replicaten_OWF$Impact_biol)
 data_replicaten_OWF$Biol_replicate <- as.factor(data_replicaten_OWF$Biol_replicate)
 data_replicaten_OWF$Environmen_ <- as.factor(data_replicaten_OWF$Environment)
-data_replicaten_OWF$Zones <- as.factor(data_replicaten_OWF$Zones)
-data_replicaten_OWF$Env_Zon <- paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zones,sep="-")
+data_replicaten_OWF$Zone <- as.factor(data_replicaten_OWF$Zone)
+data_replicaten_OWF$Env_Zon <- as.factor(paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zone,sep="-"))
 
 
 #library("xlsx")
@@ -155,7 +129,7 @@ Impact_p <- data_replicaten$Environment
 Zone_p <- data_replicaten$Zones
 Impact_OWF_p <- data_replicaten_OWF$Environment
 Zone_OWF_p <- data_replicaten_OWF$Zone
-Zone_Impact_OWF_p <- paste(data_replicaten_OWF$Environment, data_replicaten_OWF$Zone, sep = "_")
+Zone_Impact_OWF_p <- data_replicaten_OWF$Env_Zon
 
 
 Impact_biol_repl_p <- data_replicaten$Impact_biol
