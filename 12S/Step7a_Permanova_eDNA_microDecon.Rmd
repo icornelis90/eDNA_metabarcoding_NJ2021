@@ -31,28 +31,28 @@ proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-U
 #1 read data
 #setwd(paste0("home/genomics/icornelis/Demultiplex_Liu"))
 #upload data
-table_rarefied <- readxl::read_excel(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-env <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";")
-table_rarefied <- data.frame((table_rarefied), check.names = FALSE)
+table_unrarefied <- readxl::read_excel(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
+env <- readRDS(paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
+table_unrarefied <- data.frame((table_unrarefied), check.names = FALSE)
 
 #remove samples from environmental data that are absent from the rarefied data
-keep_samples <- c(colnames(table_rarefied))
-env_rarefied <- env[env$Niskin.sample %in% keep_samples,]
-colorder <- c(env_rarefied$Niskin.sample)
+keep_samples <- c(colnames(table_unrarefied))
+env_unrarefied <- env[env$Niskin.sample %in% keep_samples,]
+colorder <- c(env_unrarefied$Niskin.sample)
 
 #select ASVs that are assigned to Fish
 fish_classes <- readRDS(file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
-table_rarefied_FishASVs <- as.data.frame(table_rarefied[table_rarefied$Class %in% fish_classes,])
-table_rarefied_FishASVs <- as.data.frame(table_rarefied_FishASVs[!table_rarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
-table_rarefied_FishASVs[is.na(table_rarefied_FishASVs)] <- 0
+table_unrarefied_FishASVs <- as.data.frame(table_unrarefied[table_unrarefied$Class %in% fish_classes,])
+table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[!table_unrarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
+table_unrarefied_FishASVs[is.na(table_unrarefied_FishASVs)] <- 0
 
 #3: sort by species
 taxo <- "Species"
-merged_data_rarefied_fish <- aggregate(table_rarefied_FishASVs[,1:(ncol(table_rarefied_FishASVs)-11)], by= list(as.factor(table_rarefied_FishASVs[,taxo])),FUN=sum)
-rownames(merged_data_rarefied_fish) <- merged_data_rarefied_fish$Group.1
-merged_data_rarefied_fish$Group.1 <- NULL
-merged_data_rarefied_fish <- merged_data_rarefied_fish[,colorder]
+merged_data_unrarefied_fish <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
+rownames(merged_data_unrarefied_fish) <- merged_data_unrarefied_fish$Group.1
+merged_data_unrarefied_fish$Group.1 <- NULL
+merged_data_unrarefied_fish <- merged_data_unrarefied_fish[,colorder]
 ```
 
 
@@ -62,14 +62,14 @@ De nodige dataframes worden gemaakt uit de ingelezen data:
 
 ```{r Needed dataframes, include=FALSE}
 library(vegan)
-#data_soorten <- as.data.frame(t(table_rarefied_FishASVs[,1:(ncol(table_rarefied_FishASVs)-11)]))
-data_soorten <- as.data.frame(t(merged_data_rarefied_fish))
+#data_soorten <- as.data.frame(t(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)]))
+data_soorten <- as.data.frame(t(merged_data_unrarefied_fish))
 
 keep_samples <- c(rownames(data_soorten))
-env_rarefied <- env[env$Niskin.sample %in% keep_samples,]
+env_unrarefied <- env[env$Niskin.sample %in% keep_samples,]
 
 data_soorten <- data_soorten %>% filter(!grepl("neg", rownames(data_soorten)))
-env <- env_rarefied %>% filter(!grepl("neg", env_rarefied$Niskin.sample))
+env <- env_unrarefied %>% filter(!grepl("neg", env_unrarefied$Niskin.sample))
 
 replicaten_name <- rownames(data_soorten)
 
@@ -80,7 +80,7 @@ data_replicaten$Impact <- env$Location
 data_replicaten$Biol_replicate <- env$Biol_replicate
 data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol_replicate,sep="_")
 data_replicaten$Environment <- env$Environment
-data_replicaten$Zones <- env$Zones
+data_replicaten$Zone <- env$Zone
 
 data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
 data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
@@ -89,15 +89,15 @@ data_replicaten$Impact <- as.factor(data_replicaten$Impact)
 data_replicaten$Impact_biol <- as.factor(data_replicaten$Impact_biol)
 data_replicaten$Biol_replicate <- as.factor(data_replicaten$Biol_replicate)
 data_replicaten$Environment <- as.factor(data_replicaten$Environment)
-data_replicaten$Zones <- as.factor(data_replicaten$Zones)
-data_replicaten$Env_Zon <- paste(data_replicaten$Environment,data_replicaten$Zones,sep="-")
+data_replicaten$Zone <- as.factor(data_replicaten$Zone)
+data_replicaten$Env_Zon <- as.factor(paste(data_replicaten$Environment,data_replicaten$Zone,sep="-"))
 
 data_replicaten_OWF$Impact <- as.factor(data_replicaten_OWF$Impact)
 data_replicaten_OWF$Impact_biol <- as.factor(data_replicaten_OWF$Impact_biol)
 data_replicaten_OWF$Biol_replicate <- as.factor(data_replicaten_OWF$Biol_replicate)
 data_replicaten_OWF$Environmen_ <- as.factor(data_replicaten_OWF$Environment)
-data_replicaten_OWF$Zones <- as.factor(data_replicaten_OWF$Zones)
-data_replicaten_OWF$Env_Zon <- paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zones,sep="-")
+data_replicaten_OWF$Zone <- as.factor(data_replicaten_OWF$Zone)
+data_replicaten_OWF$Env_Zon <- as.factor(paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zone,sep="-"))
 
 library("xlsx")
 write.xlsx(data_soorten, paste0(proj.path,"/Step5_Statistics/data_soorten.xlsx"), sheetName = "Sheet1", col.names = TRUE, row.names = TRUE, append = FALSE)
@@ -154,10 +154,10 @@ data_soorten_OWF_transformed <- decostand(decostand(data_soorten_OWF, method="to
 dist_soorten_OWF_transformed_bray <- vegdist(data_soorten_OWF_transformed, method = "bray", binary = F) 
 
 Impact_p <- data_replicaten$Environment
-Zone_p <- data_replicaten$Zones
+Zone_p <- data_replicaten$Zone
 Impact_OWF_p <- data_replicaten_OWF$Environment
 Zone_OWF_p <- data_replicaten_OWF$Zone
-Zone_Impact_OWF_p <- paste(data_replicaten_OWF$Environment, data_replicaten_OWF$Zone, sep = "_")
+Zone_Impact_OWF_p <- data_replicaten_OWF$Env_Zon
 
 Impact_biol_repl_p <- data_replicaten$Impact_biol
 Biol_repl_p <- data_replicaten$Biol_replicate
@@ -211,7 +211,7 @@ Zone_permdisp_j <- permutest(Zone_betadisper_j, permutations=9999)
 Zone_permdisp_j #SIGN
 plot(Zone_betadisper_j, hull=FALSE, ellipse=TRUE)
 
-#factor Zones OWF
+#factor Zone OWF
 OWF_betadisper_j <- betadisper(dist_soorten_OWF_bray, Zone_Impact_OWF_p, type="centroid")
 OWF_permdisp_j <- permutest(OWF_betadisper_j, permutations=9999)
 OWF_permdisp_j # SIGN
@@ -229,7 +229,7 @@ Transformed_Zone_permdisp_j <- permutest(Transformed_Zone_betadisper_j, permutat
 Transformed_Zone_permdisp_j #SIGN
 plot(Transformed_Zone_betadisper_j, hull=FALSE, ellipse=TRUE)
 
-#factor Zones OWF
+#factor Zone OWF
 Transformed_OWF_betadisper_j <- betadisper(dist_soorten_OWF_transformed_bray, Zone_Impact_OWF_p, type="centroid")
 Transformed_OWF_permdisp_j <- permutest(Transformed_OWF_betadisper_j, permutations=9999)
 Transformed_OWF_permdisp_j #SIGN
