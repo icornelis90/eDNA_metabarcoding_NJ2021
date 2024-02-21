@@ -27,9 +27,9 @@ env_12S$pch <- ifelse(env_12S$Environment=="inside_OWF","1","21")
 env_12S$pch <- as.integer(env_12S$pch)
 env_COI$pch <- ifelse(env_COI$Environment=="inside_OWF","1","21")
 env_COI$pch <- as.integer(env_COI$pch)
-env_morph$Zone_color <- ifelse(env_morph$Zones=="Coastal","limegreen", 
-                                      ifelse(env_morph$Zones=="zone1", "slateblue", 
-                                             ifelse(env_morph$Zones=="zone2","darkorange","red")))
+env_morph$Zone_color <- ifelse(env_morph$Zone=="Coast","limegreen", 
+                               ifelse(env_morph$Zone=="Transition", "slateblue", 
+                                      ifelse(env_morph$Zone=="Offshore","darkorange","red")))
 env_morph$pch <- ifelse(env_morph$Environment=="inside_OWF","1","21")
 env_morph$pch <- as.integer(env_morph$pch)
 
@@ -177,7 +177,7 @@ legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_COI$stre
 
 ### Morphology data
 #create NMDS with morphological data on Fish
-env_Fish_OWF <- env_morph[!env_morph$Zones %in% "Coastal",]
+env_Fish_OWF <- env_morph[!env_morph$Zone %in% "Coast",]
 remove_coastal_Fish <- c(env_Fish_OWF$Niskin.sample)
 tab_morph_Fish_OWF <- tab_morph_Fish[rownames(tab_morph_Fish) %in% remove_coastal_Fish,]
 data.nmds_OWF_Fish <- decostand(tab_morph_Fish_OWF, method="hellinger")
@@ -191,7 +191,7 @@ legend("bottomleft", legend = c("Transition","Offshore", "outside_OWF", "inside_
 legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_Fish$stress,4),sep=""), bty ="n", cex=0.8)
 
 #create NMDS with morphological data on invertebrates
-env_Inv_OWF <- env_morph[!env_morph$Zones %in% "Coastal",]
+env_Inv_OWF <- env_morph[!env_morph$Zone %in% "Coast",]
 remove_coastal_Inv <- c(env_Inv_OWF$Niskin.sample)
 tab_morph_Inv_OWF <- tab_morph_Inv[rownames(tab_morph_Inv) %in% remove_coastal_Inv,]
 data.nmds_OWF_Inv <- decostand(tab_morph_Inv_OWF, method="hellinger")
@@ -206,19 +206,19 @@ legend("bottomright", legend = paste("NMDS, stress=",round(ord.NMDS_OWF_Inv$stre
 
 ###Indicator species analysis 3 zones
 library(indicspecies)
-groups_12S <- c(env_12S_samples$Zones)
+groups_12S <- c(env_12S$Zone)
 #indval_12S <- multipatt(seqtab_FishASVs_samples, groups_12S, func = "IndVal", control = how(nperm=9999), duleg = TRUE)
 indval_12S <- multipatt(data.nmds_12S, groups_12S, func = "IndVal", control = how(nperm=9999), duleg = TRUE)
 simper_12S <- simper(data.nmds_12S, groups_12S, permutations = 9999)
 summary(indval_12S) 
 summary(simper_12S) 
-groups_COI <- c(env_COI_samples$Zones)
+groups_COI <- c(env_COI$Zone)
 #indval_COI <- multipatt(seqtab_AnimaliaASVs_samples, groups_COI, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE) 
 indval_COI <- multipatt(data.nmds_COI, groups_COI, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE) 
 simper_COI <- simper(data.nmds_COI, groups_COI, permutations = 9999)
 summary(indval_COI) 
 summary(simper_COI)
-groups_morph <- c(env_morph$Zones)
+groups_morph <- c(env_morph$Zone)
 #indval_Fish <- multipatt(tab_morph_Fish, groups_morph, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE)
 indval_Fish <- multipatt(data.nmds_Fish, groups_morph, func = "IndVal.g", control = how(nperm=9999), duleg = TRUE)
 simper_Fish <- simper(data.nmds_Fish, groups_morph, permutations = 9999)
