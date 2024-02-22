@@ -195,8 +195,8 @@ rownames(smpl_morph_Fish_raw) <- colnames(ps_morph_Fish)
 Taxonomy_morph_Fish <- as.matrix(rownames(table_morph_Fish_2))
 rownames(Taxonomy_morph_Fish) <- rownames(ps_morph_Fish)
 ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE))#,
-                                sample_data(smpl_morph_Fish_raw),
-                                tax_table(Taxonomy_morph_Fish))
+                                #sample_data(smpl_morph_Fish_raw),
+                                #tax_table(Taxonomy_morph_Fish))
 
 ##Calculate the Coverage
 Coverage_morph_Fish <- phyloseq_coverage(physeq = ps_morph_Fish_phylo)
@@ -222,8 +222,8 @@ rownames(smpl_morph_Inv_raw) <- colnames(ps_morph_Inv)
 Taxonomy_morph_Inv <- as.matrix(rownames(table_morph_Inv_2))
 rownames(Taxonomy_morph_Inv) <- rownames(ps_morph_Inv)
 ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE))#,
-                               sample_data(smpl_morph_Inv_raw),
-                               tax_table(Taxonomy_morph_Inv))
+                               #sample_data(smpl_morph_Inv_raw),
+                               #tax_table(Taxonomy_morph_Inv))
 
 ##Calculate the Coverage
 Coverage_morph_Inv <- phyloseq_coverage(physeq = ps_morph_Inv_phylo)
