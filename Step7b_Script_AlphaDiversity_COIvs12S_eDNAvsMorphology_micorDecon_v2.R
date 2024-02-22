@@ -46,10 +46,10 @@ proj.path.COI <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 
 ###upload data
 table_12S <- readxl::read_excel(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish")
+table_morph_Fish <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Fish - Standerdized")
 
 table_COI <- readxl::read_excel(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
-table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi")
+table_morph_Inv <- readxl::read_excel(paste0(proj.path.12S,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
 
 env_12S_all <- readRDS(paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
 env_COI_all <- readRDS(paste0(proj.path.COI,"/OWFvsCoastal_concatenated/results_microDecon/R_Environment/env_ordered_noNeg.rds"))
@@ -61,6 +61,7 @@ env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data
 env_morph$Zone_color <- ifelse(env_morph$Zone=="Coast","limegreen", 
                                ifelse(env_morph$Zone=="Transition", "slateblue", 
                                        ifelse(env_morph$Zone=="Offshore","darkorange","red")))
+env_morph$Niskin.sample <- str_replace(env_morph$Niskin.sample, "_DYF_NJ2021", "")
 
 env_12S$Environment_color <- env_12S$Zone_color
 env_12S$Zone_color <- ifelse(env_12S$Zone=="Coast","limegreen", 
@@ -142,7 +143,7 @@ eDNA_Fish_Diversity_morph <- estimateD(ps_eDNA_Fish, datatype="abundance",
 ##Rarefy the data based on a coverage just below the minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage will remove the sample from the rarefied dataset)
 ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, 
-                                           iter = 1, coverage = 0.998, drop_lowcoverage = T)
+                                           iter = 1, coverage = 0.97, drop_lowcoverage = T)
 table_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
 
 ##Optional: plot the rarefied and unrarefied data for visualization 
@@ -231,7 +232,7 @@ smpl_morph_Fish_raw <- env_morph
 rownames(smpl_morph_Fish_raw) <- colnames(ps_morph_Fish)
 Taxonomy_morph_Fish <- as.matrix(rownames(table_morph_Fish_2))
 rownames(Taxonomy_morph_Fish) <- rownames(ps_morph_Fish)
-ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE),
+ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE))#,
                                 sample_data(smpl_morph_Fish_raw),
                                 tax_table(Taxonomy_morph_Fish))
 
@@ -247,19 +248,21 @@ morph_Fish_Diversity <- estimateD(ps_morph_Fish, datatype="abundance", base="cov
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage that will not generate an error)
 ps_morph_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_morph_Fish_phylo, 
-                                                 iter = 1, coverage = 0.965, drop_lowcoverage = T)
+                                                 iter = 1, coverage = 0.97, drop_lowcoverage = T)
 table_morph_rarefied_Fish <- as.data.frame(ps_morph_rarefied_Fish@otu_table)
 
 ###Prepare the Morphological data for the epibenthos catch 
 ## Create a phyloseq object
-ps_morph_Inv <- table_morph_Inv_2
-smpl_morph_Inv_raw <- env_morph
+ps_morph_Inv <- as.data.frame(table_morph_Inv_2)#[,!colnames(table_morph_Inv_2) == "ft230"]
+smpl_morph_Inv_raw <- env_morph#[!env_morph$Niskin.sample == "ft230",]
 rownames(smpl_morph_Inv_raw) <- colnames(ps_morph_Inv)
 Taxonomy_morph_Inv <- as.matrix(rownames(table_morph_Inv_2))
 rownames(Taxonomy_morph_Inv) <- rownames(ps_morph_Inv)
-ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE),
+ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE))#,
                                sample_data(smpl_morph_Inv_raw),
                                tax_table(Taxonomy_morph_Inv))
+
+iNext_morph_Inv <- iNEXT(ps_morph_Inv, q=c(0), datatype="abundance")
 
 ##Calculate the Coverage
 Coverage_morph_Inv <- phyloseq_coverage(physeq = ps_morph_Inv_phylo)
@@ -273,7 +276,32 @@ morph_Inv_Diversity <- estimateD(ps_morph_Inv, datatype="abundance", base="cover
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ps_morph_rarefied_Inv <- phyloseq_coverage_raref(physeq = ps_morph_Inv_phylo, 
                                                   iter = 1, coverage = 0.97, drop_lowcoverage = T)
-table_morph_rarefied_Inv <- as.data.frame(ps_morph_rarefied_Inv@otu_table)
+table_morph_rarefied_Inv <- as.data.frame(ps_morph_rarefied_Inv@.Data)
+
+###create a boxplot with the Coverage per method
+box_Coverage <- rbind(Coverage_eDNA_Fish, Coverage_eDNA_Inv, 
+                      Coverage_morph_Fish, Coverage_morph_Inv)
+box_Coverage$Method <- c(rep("eDNA", nrow(smpl_eDNA_Fish)), 
+                         rep("eDNA", nrow(smpl_eDNA_Inv)),
+                         rep("Morphology", nrow(smpl_morph_Fish)),
+                         rep("Morphology", nrow(smpl_morph_Inv)))
+box_Coverage$Organism <- c(rep("Fish", nrow(smpl_eDNA_Fish)), 
+                           rep("Invertebrates", nrow(smpl_eDNA_Inv)),
+                           rep("Fish", nrow(smpl_morph_Fish)),
+                           rep("Invertebrates", nrow(smpl_morph_Inv)))
+box_Coverage$Zone <- c(smpl_eDNA_Fish$Zone, 
+                       smpl_eDNA_Inv$Zone,
+                       smpl_morph_Fish$Zone,
+                       smpl_morph_Inv$Zone)
+
+box_plot_Coverage <- ggplot(box_Coverage, 
+                            aes(x = Zone, y = SampleCoverage)) + 
+  geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) +
+  scale_fill_manual(values=c("darkolivegreen3", "lightblue3")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  facet_wrap(~Organism, scales = "free")
+box_plot_Coverage
 
 ###create a boxplot using the estimatedD based on the lowest coverage for Fish and Inv
 box_rarefied <- as.data.frame(c(eDNA_Fish_Diversity_morph$qD,
@@ -314,38 +342,49 @@ box_plot_rarefied
 ##Prepare the smpl matrix for the combined fish data
 smpl_eDNA_Fish_unrarefied <- smpl_eDNA_Fish
 smpl_eDNA_Fish_rarefied <- smpl_eDNA_Fish[smpl_eDNA_Fish$Niskin.sample %in% 
-                                            colnames(table_rarefied_Fish),]
-smpl_morph_Fish <- smpl_morph_Fish_raw
+                                          colnames(table_rarefied_Fish),]
+smpl_morph_Fish_unrarefied <- smpl_morph_Fish_raw
+smpl_morph_Fish_rarefied <- smpl_morph_Fish_raw[smpl_morph_Fish_raw$Niskin.sample %in% 
+                                                colnames(table_morph_rarefied_Fish),]
 
 rownames(smpl_eDNA_Fish_unrarefied) <- paste(rownames(smpl_eDNA_Fish_unrarefied), 
-                                  "eDNA_unrarefied_Fish", sep="_")
+                                             "eDNA_unrarefied_Fish", sep="_")
 rownames(smpl_eDNA_Fish_rarefied) <- paste(rownames(smpl_eDNA_Fish_rarefied), 
-                                  "eDNA_rarefied_Fish", sep="_")
-rownames(smpl_morph_Fish) <- paste(rownames(smpl_morph_Fish),
-                                   "Morphology_Fish", sep="_")
+                                           "eDNA_rarefied_Fish", sep="_")
+rownames(smpl_morph_Fish_unrarefied) <- paste(rownames(smpl_morph_Fish_unrarefied),
+                                              "Morphology_unrarefied_Fish", sep="_")
+rownames(smpl_morph_Fish_rarefied) <- paste(rownames(smpl_morph_Fish_rarefied),
+                                            "Morphology_rarefied_Fish", sep="_")
 
 smpl_Fish <- bind_rows(smpl_eDNA_Fish_unrarefied,
                        smpl_eDNA_Fish_rarefied,
-                       smpl_morph_Fish)
+                       smpl_morph_Fish_unrarefied,
+                       smpl_morph_Fish_rarefied)
 smpl_Fish$Method <- c(rep("eDNA_unrarefied", nrow(smpl_eDNA_Fish_unrarefied)), 
                       rep("eDNA_rarefied", nrow(smpl_eDNA_Fish_rarefied)), 
-                      rep("Morphology", nrow(smpl_morph_Fish)))
-smpl_Fish$Organism <- sub(".*_","",rownames(smpl_Fish))
+                      rep("Morphology_unrarefied", nrow(smpl_morph_Fish_unrarefied)),
+                      rep("Morphology_rarefied", nrow(smpl_morph_Fish_rarefied)))
+smpl_Fish$Organism <- "Fish"
 
 ##Prepare the abundance table for the combined fish data
 ps_eDNA_Fish_unrarefied <- table_unrarefied_Fish[,colnames(table_unrarefied_Fish) %in% env_12S$Niskin.sample]
 ps_eDNA_Fish_rarefied <- table_rarefied_Fish
-ps_morph_Fish_2 <- ps_morph_Fish
+ps_morph_Fish_unrarefied <- ps_morph_Fish
+ps_morph_Fish_rarefied <- table_morph_rarefied_Fish
 
 colnames(ps_eDNA_Fish_unrarefied) <- paste(colnames(table_unrarefied_Fish
-                                                    [,colnames(table_unrarefied_Fish) %in% env_12S$Niskin.sample]), 
-                                     "eDNA_unrarefied_Fish", sep="_")
+                                                    [,colnames(table_unrarefied_Fish) %in% env_12S$Niskin.sample]),
+                                           "eDNA_unrarefied_Fish", sep="_")
 colnames(ps_eDNA_Fish_rarefied) <- paste(colnames(table_rarefied_Fish),
-                                   "eDNA_rarefied_Fish", sep="_")
-colnames(ps_morph_Fish_2) <- paste(colnames(table_morph_Fish_2), "Morphology_Fish", sep="_")
+                                         "eDNA_rarefied_Fish", sep="_")
+colnames(ps_morph_Fish_unrarefied) <- paste(colnames(table_morph_Fish_2), 
+                                            "Morphology_unrarefied_Fish", sep="_")
+colnames(ps_morph_Fish_rarefied) <- paste(colnames(table_morph_rarefied_Fish), 
+                                          "Morphology_rarefied_Fish", sep="_")
 
 ps_Fish <- merge(ps_eDNA_Fish_unrarefied, ps_eDNA_Fish_rarefied, by.x=0, by.y=0, all=T)
-ps_Fish <- merge(ps_Fish, ps_morph_Fish_2, by.x=1, by.y=0, all=T)
+ps_Fish <- merge(ps_Fish, ps_morph_Fish_unrarefied, by.x=1, by.y=0, all=T)
+ps_Fish <- merge(ps_Fish, ps_morph_Fish_rarefied, by.x=1, by.y=0, all=T)
 rownames(ps_Fish) <- ps_Fish$Row.names
 ps_Fish$Row.names <- NULL
 ps_Fish[is.na(ps_Fish)] <- 0
@@ -364,37 +403,48 @@ rownames(Taxonomy_Fish) <- rownames(ps_Fish)
 smpl_eDNA_Inv_unrarefied <- smpl_eDNA_Inv
 smpl_eDNA_Inv_rarefied <- smpl_eDNA_Inv[smpl_eDNA_Inv$Niskin.sample %in% 
                                             colnames(table_rarefied_Inv),]
-smpl_morph_Inv <- smpl_morph_Inv_raw
+smpl_morph_Inv_unrarefied <- smpl_morph_Inv_raw
+smpl_morph_Inv_rarefied <- smpl_morph_Inv_raw[smpl_morph_Inv_raw$Niskin.sample %in% 
+                                                colnames(table_morph_rarefied_Inv),]
 
 rownames(smpl_eDNA_Inv_unrarefied) <- paste(rownames(smpl_eDNA_Inv_unrarefied), 
                                              "eDNA_unrarefied_Inv", sep="_")
 rownames(smpl_eDNA_Inv_rarefied) <- paste(rownames(smpl_eDNA_Inv_rarefied), 
                                            "eDNA_rarefied_Inv", sep="_")
-rownames(smpl_morph_Inv) <- paste(rownames(smpl_morph_Inv),
-                                   "Morphology_Inv", sep="_")
+rownames(smpl_morph_Inv_unrarefied) <- paste(rownames(smpl_morph_Inv_unrarefied),
+                                             "Morphology_unrarefied_Inv", sep="_")
+rownames(smpl_morph_Inv_rarefied) <- paste(rownames(smpl_morph_Inv_rarefied),
+                                           "Morphology_rarefied_Inv", sep="_")
 
 smpl_Inv <- bind_rows(smpl_eDNA_Inv_unrarefied,
-                       smpl_eDNA_Inv_rarefied,
-                       smpl_morph_Inv)
+                      smpl_eDNA_Inv_rarefied,
+                      smpl_morph_Inv_unrarefied,
+                      smpl_morph_Inv_rarefied)
 smpl_Inv$Method <- c(rep("eDNA_unrarefied", nrow(smpl_eDNA_Inv_unrarefied)), 
                       rep("eDNA_rarefied", nrow(smpl_eDNA_Inv_rarefied)), 
-                      rep("Morphology", nrow(smpl_morph_Inv)))
+                      rep("Morphology_unrarefied", nrow(smpl_morph_Inv_unrarefied)), 
+                      rep("Morphology_rarefied", nrow(smpl_morph_Inv_rarefied)))
 smpl_Inv$Organism <- "Invertebrates"
 
 ##Prepare the abundance table for the combined invertebrate data
 ps_eDNA_Inv_unrarefied <- table_unrarefied_Inv[,colnames(table_unrarefied_Inv) %in% env_COI$Niskin.sample]
 ps_eDNA_Inv_rarefied <- table_rarefied_Inv
-ps_morph_Inv_2 <- ps_morph_Inv
+ps_morph_Inv_unrarefied <- ps_morph_Inv
+ps_morph_Inv_rarefied <- table_morph_rarefied_Inv
 
 colnames(ps_eDNA_Inv_unrarefied) <- paste(colnames(table_unrarefied_Inv
                                                    [,colnames(table_unrarefied_Inv) %in% env_COI$Niskin.sample]), 
                                            "eDNA_unrarefied_Inv", sep="_")
 colnames(ps_eDNA_Inv_rarefied) <- paste(colnames(table_rarefied_Inv),
                                          "eDNA_rarefied_Inv", sep="_")
-colnames(ps_morph_Inv_2) <- paste(colnames(table_morph_Inv_2), "Morphology_Inv", sep="_")
+colnames(ps_morph_Inv_unrarefied) <- paste(colnames(table_morph_Inv_2), 
+                                           "Morphology_unrarefied_Inv", sep="_")
+colnames(ps_morph_Inv_rarefied) <- paste(colnames(table_morph_rarefied_Inv), 
+                                           "Morphology_rarefied_Inv", sep="_")
 
 ps_Inv <- merge(ps_eDNA_Inv_unrarefied, ps_eDNA_Inv_rarefied, by.x=0, by.y=0, all=T)
-ps_Inv <- merge(ps_Inv, ps_morph_Inv_2, by.x=1, by.y=0, all=T)
+ps_Inv <- merge(ps_Inv, ps_morph_Inv_unrarefied, by.x=1, by.y=0, all=T)
+ps_Inv <- merge(ps_Inv, ps_morph_Inv_rarefied, by.x=1, by.y=0, all=T)
 rownames(ps_Inv) <- ps_Inv$Row.names
 ps_Inv$Row.names <- NULL
 ps_Inv[is.na(ps_Inv)] <- 0
@@ -425,7 +475,7 @@ rownames(Taxonomy_all) <- rownames(ps_all)
 ps_all_phylo <- phyloseq(otu_table(ps_all , taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
 p_all <- plot_richness(ps_all_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
-  scale_fill_manual(values=c("darkolivegreen4", "darkolivegreen3", "lightblue3")) +
+  scale_fill_manual(values=c("darkolivegreen4", "darkolivegreen3", "lightblue3", "lightblue")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
@@ -669,8 +719,15 @@ species_incidence_eDNA_Fish <- lapply(mor_inc_eDNA_Fish, as.incfreq)
 t_eDNA <- seq(1, 40, by=1)
 out.inc_eDNA_Fish <- iNEXT(species_incidence_eDNA_Fish, q=0, 
                   datatype="incidence_freq", size=t_eDNA)
-
 ggiNEXT(out.inc_eDNA_Fish, type=3)
+
+t_eDNA_ab <- c(1, 51, 101, 150, 200, 250, 500, 750, 
+               1000, 1500, 2000, 2500,
+               5000, 7500, 10000, 20000, 25000, 30000, 60000)
+out.inc_eDNA_Fish_ab <- iNEXT(mor_inc_eDNA_Fish, q=0, 
+                           datatype="abundance", size=t_eDNA_ab)
+ggiNEXT(out.inc_eDNA_Fish_ab, type=3)
+
 
 ##COI eDNA metabarcoding on invertebrate species level
 Coast_eDNA_Inv <- subset_samples(ps_unrarefied_Inv, Zone=="Coast")
