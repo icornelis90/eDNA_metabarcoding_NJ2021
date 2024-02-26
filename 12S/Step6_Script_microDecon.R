@@ -214,6 +214,11 @@ table_unrarefied_concatenated_Field <- merge(table_clean_concatenated_noT_Field,
 colnames(table_unrarefied_concatenated_Field)[1] <- "ASV"
 table_unrarefied_concatenated_Field <- table_unrarefied_concatenated_Field %>% relocate("ASV", .before = 'DADA2')
 
+zero_ASVs <- table_unrarefied_concatenated$ASV[rowSums(
+  table_unrarefied_concatenated[,1:(ncol(table_unrarefied_concatenated)-11)], na.rm = T) == 0]
+
+table_unrarefied_concatenated <- table_unrarefied_concatenated[!table_unrarefied_concatenated$ASV %in% zero_ASVs,]
+
 #Save Datasets
 write.xlsx(table_raw_clean, 
            paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/table_raw_FullTaxonomicAssignment_clean.xlsx"), 
