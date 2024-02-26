@@ -58,7 +58,7 @@ replicaten_name <- rownames(data_soorten)
 rownames(data_soorten) <- env_morph$Niskin.sample
 data_replicaten<- as.data.frame(rownames(data_soorten))
 colnames(data_replicaten)<-"V1"
-data_replicaten$Impact <- env_morph$Location
+data_replicaten$Impact <- str_replace(env_morph$Location, "_DYF", "")
 data_replicaten$Biol_replicate <- env_morph$Biol_replicate
 data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol_replicate,sep="_")
 data_replicaten$Environment <- env_morph$Environment
@@ -126,7 +126,7 @@ dist_soorten_OWF_transformed_bray <- vegdist(data_soorten_OWF_transformed, metho
 
 
 Impact_p <- data_replicaten$Environment
-Zone_p <- data_replicaten$Zones
+Zone_p <- data_replicaten$Zone
 Impact_OWF_p <- data_replicaten_OWF$Environment
 Zone_OWF_p <- data_replicaten_OWF$Zone
 Zone_Impact_OWF_p <- data_replicaten_OWF$Env_Zon
