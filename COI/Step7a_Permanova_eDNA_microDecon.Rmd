@@ -1,0 +1,272 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+title: "Permanova_Zero-impact"
+author: "Laure Van den Bulcke & Isolde Cornelis"
+date: "3/25/2020"
+output: html_document
+
+------
+INPUT 
+------
+
+Data inlezen. 
+Ons experimental design bestaat uit 2 niveaus:
+- Impact
+- Zone
+
+LET OP! 
+We kunnen hierdoor kijken naar het relatief belang van de Zone en de Impact
+
+Daarnaast is het belangrijk om in rekening te houden dat de resultaten maar gebaseerd zijn op 2 Impacts en 3 Zone (dus geen weergave van BDNS), besluiten mag je dus enkel nemen op deze Impacts en Zone en niet veralgemenen. Voorzichtig zijn in verwoording van de resultaten!
+
+
+Beta diversity:  
+```{r Read data}
+if(.Platform$OS.type == "unix"){home<-"/home/"} else{
+  home<-"//192.168.236.131/"}
+
+# make paths
+proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
+
+#1 read data
+#setwd(paste0("home/genomics/icornelis/Demultiplex_Liu"))
+#upload data
+table_unrarefied <- readxl::read_excel(paste0(proj.path,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"))
+env <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";") 
+table_unrarefied <- data.frame((table_unrarefied), check.names = FALSE)
+
+#remove samples from environmental data that are absent from the rarefied data
+keep_samples <- c(colnames(table_unrarefied))
+env_unrarefied <- env[env$Niskin.sample %in% keep_samples,]
+colorder <- c(env_unrarefied$Niskin.sample)
+
+#select ASVs that are assigned to Animalia
+table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied[table_unrarefied$Kingdom %in% c("Animalia"),])
+table_unrarefied_AnimaliaASVs <-as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Species %in% "NA",])
+table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_AnimaliaASVs[!table_unrarefied_AnimaliaASVs$Phylum %in% "Chordata",])
+table_unrarefied_AnimaliaASVs[is.na(table_unrarefied_AnimaliaASVs)] <- 0
+
+#rm(names_DNA, names_DNA2)
+
+#3: sort by species
+#Set the tax names as rownames
+taxo <- "Species"
+merged_data_unrarefied_Animalia <- aggregate(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)], by= list(as.factor(table_unrarefied_AnimaliaASVs[,taxo])),FUN=sum)
+rownames(merged_data_unrarefied_Animalia) <- merged_data_unrarefied_Animalia$Group.1
+merged_data_unrarefied_Animalia$Group.1 <- NULL
+merged_data_unrarefied_Animalia <- merged_data_unrarefied_Animalia[,colorder]
+
+#(rm(table_unrarefied_Animalia, merged_data_unrarefied_Animalia, taxo))
+```
+
+
+De nodige dataframes worden gemaakt uit de ingelezen data:
+1) informatie over de soorten: rijen= stalen, kolommen= soortsnamen
+
+```{r Needed dataframes, include=FALSE}
+library(vegan)
+#data_soorten <- as.data.frame(t(table_unrarefied_AnimaliaASVs[,1:(ncol(table_unrarefied_AnimaliaASVs)-11)]))
+data_soorten <- as.data.frame(t(merged_data_unrarefied_Animalia))
+empty_rows <- c(rownames(data_soorten[rowSums(data_soorten) == 0, ]))
+data_soorten <- data_soorten[!rownames(data_soorten) %in% empty_rows,]
+#data_soorten <- data_soorten[1:51,]  #niet kijken naar pooled seq
+
+keep_samples <- c(rownames(data_soorten))
+env <- env[env$Niskin.sample %in% keep_samples,]
+
+data_soorten <- data_soorten %>% filter(!grepl("neg", rownames(data_soorten)))
+env <- env %>% filter(!grepl("neg", env$Niskin.sample))
+
+replicaten_name <- rownames(data_soorten)
+
+rownames(data_soorten) <- env$Niskin.sample
+data_replicaten <- as.data.frame(rownames(data_soorten))
+colnames(data_replicaten) <-"V1"
+data_replicaten$Impact <- env$Location
+data_replicaten$Biol_replicate <- env$Biol_replicate
+data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol_replicate,sep="_")
+data_replicaten$Environment <- env$Environment
+data_replicaten$Zone <- env$Zone
+
+data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
+data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
+
+data_replicaten$Impact <- as.factor(data_replicaten$Impact)
+data_replicaten$Impact_biol <- as.factor(data_replicaten$Impact_biol)
+data_replicaten$Biol_replicate <- as.factor(data_replicaten$Biol_replicate)
+data_replicaten$Environment <- as.factor(data_replicaten$Environment)
+data_replicaten$Zone <- as.factor(data_replicaten$Zone)
+data_replicaten$Env_Zon <- paste(data_replicaten$Environment,data_replicaten$Zone,sep="-")
+
+data_replicaten_OWF$Impact <- as.factor(data_replicaten_OWF$Impact)
+data_replicaten_OWF$Impact_biol <- as.factor(data_replicaten_OWF$Impact_biol)
+data_replicaten_OWF$Biol_replicate <- as.factor(data_replicaten_OWF$Biol_replicate)
+data_replicaten_OWF$Environmen_ <- as.factor(data_replicaten_OWF$Environment)
+data_replicaten_OWF$Zone <- as.factor(data_replicaten_OWF$Zone)
+data_replicaten_OWF$Env_Zon <- paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zone,sep="-")
+
+#data_replicaten_nor <- data_replicaten[!data_replicaten$V1 %in% remove_outliner_Coast,]
+
+  
+#diversity_column <- c()
+#for (i in 1:nrow(data_replicaten)){
+ # Impact <- data_replicaten$Impact[i]
+ # if (Impact == "120") {diversity <- "HIGH"}
+ # if (Impact == "840") {diversity <- "MEDIUM"}
+ # if (Impact == "ZVL") {diversity <- "LOW"}
+ # diversity_column <- append(diversity_column, diversity)
+#}
+#data_replicaten$diversity <- diversity_column
+#data_replicaten$diversity <- as.factor(data_replicaten$diversity)
+
+
+library("xlsx")
+write.xlsx(data_soorten, paste0(proj.path,"/Step5_Statistics/data_soorten.xlsx"), sheetName = "Sheet1", col.names = TRUE, row.names = TRUE, append = FALSE)
+write.xlsx(data_replicaten, paste0(proj.path,"/Step5_Statistics/data_replicaten.xlsx"), sheetName = "Sheet1", col.names = TRUE, row.names = FALSE, append = FALSE)
+
+```
+
+
+
+Een Dissimilarity index wordt berekend. Hier Bray-Curtis
+
+```{R Dissimilarity index }
+# JACCARD
+
+#dissimilarity index = jaccard (prensence/absence)
+dist_soorten_jaccard <- vegdist(data_soorten, method = "jaccard",binary=TRUE) 
+
+# BRAY
+range(data_soorten)
+
+dist_soorten_bray <- vegdist(data_soorten, method = "bray") 
+dist_soorten_OWF_bray <- vegdist(data_soorten_OWF, method ="bray")
+
+
+```
+
+Ons experimental design bestaat uit 2 niveaus:
+- Zone
+- Impact
+
+H0: „the centroids of the groups, as defined in the space of the chosen resemblance measure, are equivalent for all groups.“. Thus, if H0 were true, any observed differences among the centroids in a given set of data will be similar in size to what would be obtained under random allocation of individual sample units to the groups (i.e., under permuration).
+
+
+```{R Permanova}
+#log root transformation
+#data_soorten_transformed <- decostand(data_soorten, method="log")
+#data_soorten_transformed <- decostand(data_soorten, method="pa")
+#data_soorten_transformed <- decostand(data_soorten, method="hellinger")
+data_soorten_transformed <- decostand(decostand(data_soorten, method="tot"), method="max")
+dist_soorten_transformed_bray <- vegdist(data_soorten_transformed, method = "bray", binary = F) 
+
+OWF <- c(rownames(data_soorten_OWF))
+data_soorten_OWF_transformed <- data_soorten_transformed[rownames(data_soorten_transformed) %in% OWF,]
+dist_soorten_OWF_transformed_bray <- vegdist(data_soorten_OWF_transformed, method = "bray", binary = F) 
+
+Impact_p <- data_replicaten$Environment
+Zone_p <- data_replicaten$Zone
+Impact_OWF_p <- data_replicaten_OWF$Environment
+Zone_OWF_p <- data_replicaten_OWF$Zone
+Zone_Impact_OWF_p <- data_replicaten_OWF$Env_Zon
+
+
+Impact_biol_repl_p <- data_replicaten$Impact_biol
+Biol_repl_p <- data_replicaten$Biol_replicate
+Biol_repl_OWF_p <- data_replicaten_OWF$Biol_replicate
+
+
+#ASSUMPTIONS
+library(pairwiseAdonis)
+pairwise.adonis(dist_soorten_transformed_bray, Impact_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_transformed_bray, Zone_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_transformed_bray, Impact_OWF_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_transformed_bray, Zone_OWF_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_transformed_bray, Zone_Impact_OWF_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+
+library(pairwiseAdonis)
+pairwise.adonis(dist_soorten_bray, Impact_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_bray, Zone_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_bray, Impact_OWF_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_bray, Zone_OWF_p, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+pairwise.adonis(dist_soorten_OWF_bray, data_replicaten_OWF$Env_Zon, p.adjust.m="bonferroni", reduce=NULL, perm=9999)
+
+```
+Permanova significant voor Impact en biologische replicaten, niet voor DNA replicaten (residuals).
+
+A significant Permanova means one of three things. 1) There is a difference in the location of the samples (i.e. the average community composition), 2) There is a difference in the dispersion of the samples (i.e. the variability in the community composition), or 3) There is a difference in both the location and the dispersion.
+So, if you get a significant Permanova you'll want to distinguish between the three options. That of course is why you need to run the permdisp. If you get a non-significant Permdisp you can conclude the first option above is the correct one. If you get a significant Permdisp then it is either the second or third option (that is there is definitely a difference in dispersion and maybe a difference in location). There is no fool-proof way to distinguish between these two, but looking at an MDS plot of the data will hopefully help you do so (also see note 2 below).
+
+
+ASSUMPTIONS
+
+In the case of a one-way analysis, the PERMANOVA test using
+permutations assumes only that the samples are exchangeable under a true null hypothesis
+
+PERMANOVA works with the assumption that dispersion of the data in your samples is the ~same among each other, so before running PERMANOVA, you must run the betadisper->permutest to know if the dispersions are the same. For that to be true, the permutest has to have a non-significant p-value. Knowing the previous, then you can run the PERMANOVA test, otherwise your interpretations will be wrong
+=> dispersion testen met permdisp
+
+
+```{R, PERMANOVA Bray}
+
+# Advanced applied statistieks
+
+pmv_test_bray <- adonis2(dist_soorten_bray ~   Zone_p, data=data_replicaten, permutations=9999)
+pmv_test_bray
+pmv_OWF_bray <- adonis2(dist_soorten_OWF_bray ~ Zone_OWF_p * Impact_OWF_p * Zone_OWF_p/Impact_OWF_p, data=data_replicaten_OWF, permutations = 9999)
+pmv_OWF_bray
+
+#ASSUMPTIONS
+
+#factor Zone
+Zone_betadisper_j <- betadisper(dist_soorten_bray, Zone_p, type="centroid")
+Zone_permdisp_j <- permutest(Zone_betadisper_j, permutations=9999)
+Zone_permdisp_j #SIGN
+plot(Zone_betadisper_j, hull=FALSE, ellipse=TRUE)
+
+#factor Zone OWF
+OWF_betadisper_j <- betadisper(dist_soorten_OWF_bray, Zone_Impact_OWF_p, type="centroid")
+OWF_permdisp_j <- permutest(OWF_betadisper_j, permutations=9999)
+OWF_permdisp_j # SIGN
+plot(OWF_betadisper_j, hull=FALSE, ellipse=TRUE)
+
+#factor location
+#Impact_betadisper_j <- betadisper(dist_soorten_bray, Impact_p, type="centroid")
+#Impact_permdisp_j <- permutest(Impact_betadisper_j, permutations=9999)
+#Impact_permdisp_j #SIGN
+#plot(Impact_betadisper_j, hull=FALSE, ellipse=TRUE)
+
+#log root transformation
+#pmv_test_bray_transformed <- adonis2(dist_soorten_transformed_bray ~   Impact_p, data=data_replicaten, permutations=9999)
+#pmv_test_bray_transformed
+pmv_test_bray_Zone_transformed <- adonis2(dist_soorten_transformed_bray ~   Zone_p, data=data_replicaten, permutations=9999)
+pmv_test_bray_Zone_transformed
+
+pmv_OWF_bray_transformed <- adonis2(dist_soorten_OWF_transformed_bray~ Zone_OWF_p * Impact_OWF_p * Zone_OWF_p/Impact_OWF_p, data=data_replicaten_OWF, permutations = 9999)
+pmv_OWF_bray_transformed
+
+#factor Zone
+transformed_Zone_betadisper_j <- betadisper(dist_soorten_transformed_bray, Zone_p, type="centroid")
+transformed_Zone_permdisp_j <- permutest(transformed_Zone_betadisper_j, permutations=9999)
+transformed_Zone_permdisp_j #SIGN
+plot(transformed_Zone_betadisper_j, hull=FALSE, ellipse=TRUE)
+
+#factor Zone OWF
+transformed_OWF_betadisper_j <- betadisper(dist_soorten_OWF_transformed_bray, Zone_Impact_OWF_p, type="centroid")
+transformed_OWF_betadisper_zone <- betadisper(dist_soorten_OWF_transformed_bray, Zone_OWF_p, type="centroid")
+transformed_OWF_betadisper_impact <- betadisper(dist_soorten_OWF_transformed_bray, Impact_OWF_p, type="centroid")
+transformed_OWF_permdisp_j <- permutest(transformed_OWF_betadisper_j, permutations=9999)
+transformed_OWF_permdisp_z <- permutest(transformed_OWF_betadisper_zone, permutations=9999)
+transformed_OWF_permdisp_i <- permutest(transformed_OWF_betadisper_impact, permutations=9999)
+transformed_OWF_permdisp_j
+transformed_OWF_permdisp_z
+transformed_OWF_permdisp_i#SIGN
+plot(transformed_OWF_betadisper_j, hull=FALSE, ellipse=TRUE, label = F)
+plot(transformed_OWF_betadisper_zone, hull=FALSE, ellipse=TRUE, label = T)
+plot(transformed_OWF_betadisper_impact, hull=FALSE, ellipse=TRUE, label = T)
+
+```
