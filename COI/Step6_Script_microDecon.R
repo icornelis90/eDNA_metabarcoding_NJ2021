@@ -13,7 +13,8 @@ library(tidyverse)
 library(ade4)
 library(here)
 library(devtools)
-devtools::install_github("donaldtmcknight/microDecon")
+library(microDecon)
+#devtools::install_github("donaldtmcknight/microDecon")
 
 # make paths
 proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
@@ -99,6 +100,7 @@ decontaminated_DYFS <- decon(data = table_DYFS, numb.blanks=neg_DYFS, numb.ind=n
 
 decon_DYFS <- as.data.frame(decontaminated_DYFS$decon.table)
 contaminant_DYFS <- as.data.frame(decontaminated_DYFS$OTUs.removed)
+contaminant_reads_DYFS <- as.data.frame(decontaminated_DYFS$reads.removed)
 
 table_DYFS_Field <- table_DYFS[,!grepl("filter|DNA|PCR", colnames(table_DYFS))]
 neg_DYFS_Field <- length(c(colnames(table_DYFS_Field[, grepl("neg", colnames(table_DYFS_Field))])))
@@ -106,8 +108,9 @@ neg_DYFS_Field <- length(c(colnames(table_DYFS_Field[, grepl("neg", colnames(tab
 decontaminated_DYFS_Field <- decon(data = table_DYFS_Field, numb.blanks=neg_DYFS_Field, numb.ind=numb_DYFS, taxa=T,
                                    runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
 
-decon_DYFS_Field <- as.data.frame(decontaminated_DYFS$decon.table)
-contaminant_DYFS_Field <- as.data.frame(decontaminated_DYFS$OTUs.removed)
+decon_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$decon.table)
+contaminant_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$OTUs.removed)
+contaminant_reads_DYFS_Field <- as.data.frame(decontaminated_DYFS_Field$reads.removed)
 
 Geo_samples <- c(env$Niskin.sample[which(env$Zone %in% c("Transition", "Offshore") | env$Location == "ft230")])
 Geo <- c(Geo_samples, env$Location[which(env$Location %in% c("neg_inside_OWF", "neg_outside_OWF", "neg_PCR"))], 
@@ -132,6 +135,7 @@ decontaminated_Geo <- decon(data = table_Geo, numb.blanks=neg_Geo, numb.ind=numb
 
 decon_Geo <- as.data.frame(decontaminated_Geo$decon.table)
 contaminant_Geo <- as.data.frame(decontaminated_Geo$OTUs.removed)
+contaminant_reads_Geo <- as.data.frame(decontaminated_Geo$reads.removed)
 
 table_Geo_Field <- table_Geo[,!grepl("filter|DNA|PCR", colnames(table_Geo))]
 neg_Geo_Field <- length(c(colnames(table_Geo_Field[, grepl("neg", colnames(table_Geo_Field))])))
@@ -139,8 +143,9 @@ neg_Geo_Field <- length(c(colnames(table_Geo_Field[, grepl("neg", colnames(table
 decontaminated_Geo_Field <- decon(data = table_Geo_Field, numb.blanks=neg_Geo_Field, numb.ind=numb_Geo, taxa=T,
                                   runs=2,thresh = 0.7,prop.thresh = 0.00005,regression=0,low.threshold=40,up.threshold=400)
 
-decon_Geo_Field <- as.data.frame(decontaminated_Geo$decon.table)
-contaminant_Geo_Field <- as.data.frame(decontaminated_Geo$OTUs.removed)
+decon_Geo_Field <- as.data.frame(decontaminated_Geo_Field$decon.table)
+contaminant_Geo_Field <- as.data.frame(decontaminated_Geo_Field$OTUs.removed)
+contaminant_reads_Geo_Field <- as.data.frame(decontaminated_Geo_Field$reads.removed)
 
 table_clean <- merge(decon_DYFS, decon_Geo, by = 1, all = T)
 table_clean <- table_clean[, !grepl("Taxa|blank", colnames(table_clean))]
@@ -179,16 +184,27 @@ table_unrarefied_concatenated <- merge(table_clean_concatenated_noT, table_raw[(
 colnames(table_unrarefied_concatenated)[1] <- "ASV"
 table_unrarefied_concatenated <- table_unrarefied_concatenated %>% relocate("ASV", .before = 'DADA2')
 
+zero_ASVs <- table_unrarefied_concatenated$ASV[rowSums(
+  table_unrarefied_concatenated[,1:(ncol(table_unrarefied_concatenated)-11)], na.rm = T) == 0]
+
+table_unrarefied_concatenated <- table_unrarefied_concatenated[!table_unrarefied_concatenated$ASV %in% zero_ASVs,]
+
 #Save Datasets
 write.xlsx(table_raw_clean, 
            paste0(proj.path,"/OWFvsCoastal_concatenated/results_microDecon/table_raw_FullTaxonomicAssignment_clean.xlsx"), 
            sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
 
 write.xlsx(table_unrarefied_concatenated, 
-           paste0(proj.path,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean.xlsx"), 
+           paste0(proj.path,"/OWFvsCoastal_concatenated/results_microDecon/table_unrarefied_concatenated_FullTaxonomicAssignment_clean_v2.xlsx"), 
            sheetName = "FullTaxAss_CleanedASVs", colNames = TRUE, rowNames = FALSE, append = FALSE)
 
-list_of_datasets <- list("DYFS" = contaminant_DYFS, "DYFS_Field" = contaminant_DYFS_Field, 
-                         "GeoV" = contaminant_Geo, "GeoV_Field" = contaminant_Geo_Field)
+list_of_datasets <- list("DYFS" = contaminant_DYFS, 
+                         "DYFS_Field" = contaminant_DYFS_Field, 
+                         "DYFS_reads" = contaminant_reads_DYFS, 
+                         "DYFS_reads_Field" = contaminant_reads_DYFS_Field,
+                         "GeoV" = contaminant_Geo, 
+                         "GeoV_Field" = contaminant_Geo_Field,
+                         "GeoV_reads" = contaminant_reads_Geo,
+                         "GeoV_reads_Field" = contaminant_reads_Geo_Field)
 write.xlsx(list_of_datasets, paste0(proj.path,"/OWFvsCoastal_concatenated/results_microDecon/contaminantASVs.xlsx"), colNames = T)
 
