@@ -310,5 +310,19 @@ fish_classes_Joran<-c( "Agnatha" #superclass
                  ,"Dipneusti" #class          
 )
 
+Pelagic_Fish <- c("Alosa fallax",
+                  "Aphia minuta", 
+                  "Atherina presbyter",
+                  "Belone belone",
+                  "Chelon auratus",
+                  "Engraulis encrasicolus",
+                  "Osmerus eperlanus",
+                  "Salmo trutta",
+                  "Sardina pilchardus",
+                  "Scomber scombrus",
+                  "Sprattus sprattus",
+                  "Trachurus trachurus")
+
 saveRDS(fish_classes, file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 saveRDS(fish_classes_Joran, file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_v2/REnvironment/fish_classes_Joran.rds"))
+saveRDS(Pelagic_Fish, file = paste0(proj.path,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Pelagic_Fish.rds"))
