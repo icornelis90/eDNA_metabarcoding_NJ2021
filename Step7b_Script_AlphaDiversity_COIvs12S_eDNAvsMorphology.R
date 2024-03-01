@@ -56,11 +56,11 @@ env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data
 
 #add color and pch to environmental data to create the plot 
 env_12S$Environment_color <- ifelse(env_12S$Zone=="Coast","limegreen", 
-                                ifelse(env_12S$Zone=="Transition", "slateblue", 
-                                       ifelse(env_12S$Zone=="Offshore","darkorange","red")))
-env_COI$Environment_color <- ifelse(env_COI$Zones=="Coastal","limegreen", 
-                                    ifelse(env_COI$Zones=="zone1", "slateblue", 
-                                           ifelse(env_COI$Zones=="zone2","darkorange","red")))
+                                    ifelse(env_12S$Zone=="Transition", "slateblue", 
+                                           ifelse(env_12S$Zone=="Offshore","darkorange","red")))
+env_COI$Environment_color <- ifelse(env_COI$Zone=="Coast","limegreen", 
+                                    ifelse(env_COI$Zone=="Transition", "slateblue", 
+                                           ifelse(env_COI$Zone=="Offshore","darkorange","red")))
 env_morph$Environment_color <- ifelse(env_morph$Zone=="Coast","limegreen", 
                                       ifelse(env_morph$Zone=="Transition", "slateblue", 
                                              ifelse(env_morph$Zone=="Offshore","darkorange","red")))
@@ -91,13 +91,17 @@ env_unrarefied_COI <- env_COI[env_COI$Niskin.sample %in% keep_samples_COI,]
 #select Fish species and merge by species
 fish_classes <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
+demersal_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Demersal_Fish.rds"))
 table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_12S[table_unrarefied_12S$Class %in% fish_classes,])
 table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[!table_unrarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
 rownames(table_unrarefied_FishASVs) <- table_unrarefied_FishASVs$ASV
+table_unrarefied_FishASVs[is.na(table_unrarefied_FishASVs)] <- 0
 taxo <- "Species"
 merged_data_unrarefied_12S <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
 rownames(merged_data_unrarefied_12S) <- as.character(merged_data_unrarefied_12S$Group.1)
 merged_data_unrarefied_12S$Group.1 <- NULL
+merged_data_unrarefied_Demersal <- merged_data_unrarefied_12S[rownames(merged_data_unrarefied_12S) %in% demersal_fish,]
+merged_data_unrarefied_Demersal  <- merged_data_unrarefied_Demersal[,!colSums(merged_data_unrarefied_Demersal) == 0]
 
 #select Invertebrate species and merge by species
 table_unrarefied_AnimaliaASVs <- as.data.frame(table_unrarefied_COI[table_unrarefied_COI$Kingdom %in% c("Animalia"),])
@@ -121,11 +125,6 @@ merged_data_unrarefied_Animalia <- merged_data_unrarefied_Animalia[,colorder_COI
 #eDNA-12S
 ps_12S <- merged_data_unrarefied_12S
 smpl_12S <- env_unrarefied_12S
-#smpl_12S$Area <- paste(smpl_12S$Environment, smpl_12S$Zones, sep="_")
-#smpl_12S$Area <- ifelse(smpl_12S$Area=="Coastal_Coastal","Coastal", smpl_12S$Area)
-smpl_12S$Area <- ifelse(smpl_12S$Zones=="Coastal","Coast", 
-                                    ifelse(smpl_12S$Zones=="zone1", "Transition", 
-                                           ifelse(smpl_12S$Zones=="zone2","Offshore","red")))
 rownames(smpl_12S) <- colnames(ps_12S)
 Taxonomy_12S <- rownames(merged_data_unrarefied_12S)
 Taxonomy_12S <- as.matrix(Taxonomy_12S)
@@ -138,11 +137,6 @@ rownames(Taxonomy_12S) <- rownames(ps_12S)
 #eDNA-COI
 ps_COI <- merged_data_unrarefied_Animalia
 smpl_COI <- env_unrarefied_COI
-#smpl_COI$Area <- paste(smpl_COI$Environment, smpl_COI$Zones, sep="_")
-#smpl_COI$Area <- ifelse(smpl_COI$Area=="Coastal_Coastal","Coastal", smpl_COI$Area)
-smpl_COI$Zone <- ifelse(smpl_COI$Zones=="Coastal","Coast", 
-                        ifelse(smpl_COI$Zones=="zone1", "Transition", 
-                               ifelse(smpl_COI$Zones=="zone2","Offshore","red")))
 rownames(smpl_COI) <- colnames(ps_COI)
 Taxonomy_COI <- rownames(merged_data_unrarefied_Animalia)
 Taxonomy_COI <- as.matrix(Taxonomy_COI)
@@ -152,14 +146,18 @@ rownames(Taxonomy_COI) <- rownames(ps_COI)
   #geom_boxplot(outlier.shape = NA)
 #plot_COI
 
+SaveData <- list(ps_Decontam_unrarefied_Fish = ps_12S,
+                 ps_Decontam_unrarefied_Inv = ps_COI,
+                 smpl_Decontam_unrarefied_Fish = smpl_12S,
+                 smpl_Decontam_unrarefied_Inv = smpl_COI)
+saveRDS(SaveData, paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Decontam_unrarefied.rds"))
+
+
 #Morphology-Fish
 ps_morph_12S <- as.data.frame(table_morph_12S_2)
+ps_morph_Demersal <- ps_morph_12S[rownames(ps_morph_12S) %in% demersal_fish,]
+ps_morph_Demersal  <- ps_morph_Demersal[,!colSums(ps_morph_Demersal) == 0]
 smpl_morph_12S <- env_morph
-#smpl_morph_12S$Area <- paste(smpl_morph_12S$Environment, smpl_morph_12S$Zones, sep="_")
-#smpl_morph_12S$Area <- ifelse(smpl_morph_12S$Area=="Coastal_Coastal","Coastal", smpl_morph_12S$Area)
-smpl_morph_12S$Area <- ifelse(smpl_morph_12S$Zones=="Coastal","Coast", 
-                        ifelse(smpl_morph_12S$Zones=="zone1", "Transition", 
-                               ifelse(smpl_morph_12S$Zones=="zone2","Offshore","red")))
 rownames(smpl_morph_12S) <- colnames(ps_morph_12S)
 Taxonomy_morph_12S <- rownames(table_morph_12S_2)
 Taxonomy_morph_12S <- as.matrix(Taxonomy_morph_12S)
@@ -171,11 +169,6 @@ rownames(Taxonomy_morph_12S) <- rownames(ps_morph_12S)
 #Morphology-Invertebrates
 ps_morph_COI <- table_morph_COI_2
 smpl_morph_COI <- env_morph
-#smpl_morph_COI$Area <- paste(smpl_morph_COI$Environment, smpl_morph_COI$Zones, sep="_")
-#smpl_morph_COI$Area <- ifelse(smpl_morph_COI$Area=="Coastal_Coastal","Coastal", smpl_morph_COI$Area)
-smpl_morph_COI$Area <- ifelse(smpl_morph_COI$Zones=="Coastal","Coast", 
-                        ifelse(smpl_morph_COI$Zones=="zone1", "Transition", 
-                               ifelse(smpl_morph_COI$Zones=="zone2","Offshore","red")))
 rownames(smpl_morph_COI) <- colnames(ps_morph_COI)
 Taxonomy_morph_COI <- rownames(table_morph_COI_2)
 Taxonomy_morph_COI <- as.matrix(Taxonomy_morph_COI)
@@ -187,9 +180,6 @@ rownames(Taxonomy_morph_COI) <- rownames(ps_morph_COI)
 #Morphology-Standerdized
 ps_morph_12S_Std <- as.data.frame(table_morph_12S_Std_2)
 smpl_morph_12S_Std <- env_morph
-smpl_morph_12S_Std$Area <- ifelse(smpl_morph_12S_Std$Zones=="Coastal","Coast", 
-                              ifelse(smpl_morph_12S_Std$Zones=="zone1", "Transition", 
-                                     ifelse(smpl_morph_12S_Std$Zones=="zone2","Offshore","red")))
 rownames(smpl_morph_12S_Std) <- colnames(ps_morph_12S_Std)
 Taxonomy_morph_12S_Std <- rownames(table_morph_12S_Std_2)
 Taxonomy_morph_12S_Std <- as.matrix(Taxonomy_morph_12S_Std)
@@ -197,9 +187,6 @@ rownames(Taxonomy_morph_12S_Std) <- rownames(ps_morph_12S_Std)
 
 ps_morph_COI_Std <- table_morph_COI_Std_2
 smpl_morph_COI_Std <- env_morph
-smpl_morph_COI_Std$Area <- ifelse(smpl_morph_COI_Std$Zones=="Coastal","Coast", 
-                              ifelse(smpl_morph_COI_Std$Zones=="zone1", "Transition", 
-                                     ifelse(smpl_morph_COI_Std$Zones=="zone2","Offshore","red")))
 rownames(smpl_morph_COI_Std) <- colnames(ps_morph_COI_Std)
 Taxonomy_morph_COI_Std <- rownames(table_morph_COI_Std_2)
 Taxonomy_morph_COI_Std <- as.matrix(Taxonomy_morph_COI_Std)
@@ -207,23 +194,21 @@ rownames(Taxonomy_morph_COI_Std) <- rownames(ps_morph_COI_Std)
 
 
 ##Observed diversity and Shannon diversity index for all Fish data 
-rownames(smpl_12S) <- paste(colnames(merged_data_unrarefied_12S), "eDNA_Fish", sep="_")
-rownames(smpl_morph_12S) <- paste(colnames(table_morph_12S_2), "Morphology_Fish", sep="_")
-rownames(smpl_morph_12S_Std) <- paste(colnames(table_morph_12S_Std_2), "Morphology_Standerdized_Fish", sep="_")
 #smpl_Fish <- bind_rows(smpl_12S, smpl_morph_12S, smpl_morph_12S_Std)
 #smpl_Fish$Method <- c(rep("eDNA", nrow(smpl_12S)), 
 #                      rep("Morphology", nrow(smpl_morph_12S)), 
 #                      rep("Morphology - Standerdized", nrow(smpl_morph_12S_Std)))
-smpl_Fish <- bind_rows(smpl_12S, smpl_morph_12S)
-smpl_Fish$Method <- c(rep("eDNA", nrow(smpl_12S)), 
-                      rep("Morphology", nrow(smpl_morph_12S)))
-smpl_Fish$Organism <- sub(".*_","",rownames(smpl_Fish))
+smpl_Fish <- bind_rows(smpl_12S, smpl_12S, smpl_morph_12S, smpl_morph_12S)
+smpl_Fish$Method <- c(rep("eDNA_All", nrow(smpl_12S)),
+                      rep("eDNA_Demersal", nrow(smpl_12S)), 
+                      rep("Morphology_All", nrow(smpl_morph_12S)),
+                      rep("Morphology_Demersal", nrow(smpl_morph_12S)))
+smpl_Fish$Organism <- "Fish"
+rownames(smpl_Fish) <- paste(smpl_Fish$Niskin.sample, smpl_Fish$Method, smpl_Fish$Organism, sep="_")
 
-colnames(ps_12S) <- paste(colnames(merged_data_unrarefied_12S), "eDNA_Fish", sep="_")
-colnames(ps_morph_12S) <- paste(colnames(table_morph_12S_2), "Morphology_Fish", sep="_")
-colnames(ps_morph_12S_Std) <- paste(colnames(table_morph_12S_Std_2), "Morphology_Standerdized_Fish", sep="_")
-
-ps_Fish <- merge(ps_12S, ps_morph_12S, by.x=0, by.y=0, all=T)
+ps_Fish <- merge(ps_12S, merged_data_unrarefied_Demersal, by.x=0, by.y=0, all=T)
+ps_Fish <- merge(ps_Fish, ps_morph_12S, by.x=1, by.y=0, all=T)
+ps_Fish <- merge(ps_Fish, ps_morph_Demersal, by.x=1, by.y=0, all=T)
 #ps_Fish <- merge(ps_Fish, ps_morph_12S_Std, by.x=1, by.y=0, all=T)
 rownames(ps_Fish) <- ps_Fish$Row.names
 ps_Fish$Row.names <- NULL
@@ -241,21 +226,15 @@ rownames(Taxonomy_Fish) <- rownames(ps_Fish)
 #p
 
 ##Observed diversity and Shannon diversity index for all Invertebrate data 
-rownames(smpl_COI) <- paste(colnames(merged_data_unrarefied_Animalia), "eDNA_Invertebrates", sep="_")
-rownames(smpl_morph_COI) <- paste(colnames(table_morph_COI_2), "Morphology_Invertebrates", sep="_")
-rownames(smpl_morph_COI_Std) <- paste(colnames(table_morph_COI_Std_2), "Morphology_Standerdized_Invertebrates", sep="_")
 #smpl_Inv <- bind_rows(smpl_COI, smpl_morph_COI, smpl_morph_COI_Std)
 #smpl_Inv$Method <- c(rep("eDNA", nrow(smpl_COI)), 
 #                     rep("Morphology", nrow(smpl_morph_COI)),
 #                     rep("Morphology - Standerdized", nrow(smpl_morph_COI_Std)))
 smpl_Inv <- bind_rows(smpl_COI, smpl_morph_COI)
-smpl_Inv$Organism <- sub(".*_","",rownames(smpl_Inv))
-smpl_Inv$Method <- c(rep("eDNA", nrow(smpl_COI)), 
-                     rep("Morphology", nrow(smpl_morph_COI)))
-
-colnames(ps_COI) <- paste(colnames(merged_data_unrarefied_Animalia), "eDNA_Invertebrates", sep="_")
-colnames(ps_morph_COI) <- paste(colnames(table_morph_COI_2), "morph_Invertebrates", sep="_")
-colnames(ps_morph_COI_Std) <- paste(colnames(table_morph_COI_Std_2), "morph_Standerdized_Invertebrates", sep="_")
+smpl_Inv$Method <- c(rep("eDNA_All", nrow(smpl_COI)), 
+                     rep("Morphology_All", nrow(smpl_morph_COI)))
+smpl_Inv$Organism <- "Invertebrates"
+rownames(smpl_Inv) <- paste(smpl_Inv$Niskin.sample, smpl_Inv$Method, smpl_Inv$Organism, sep="_")
 
 #ps_Inv <- bind_rows(ps_COI, ps_morph_COI)
 ps_Inv <- merge(ps_COI, ps_morph_COI, by.x=0, by.y=0, all=T)
@@ -291,12 +270,12 @@ rownames(Taxonomy_all) <- rownames(ps_all)
 ps_all_phylo <- phyloseq(otu_table(ps_all , taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
 p_all <- plot_richness(ps_all_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
-  scale_fill_manual(values=c("darkolivegreen3", "lightblue3")) +
+  scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
 p_all$layers <- p_all$layers[-1]
-p_all$data$Area <- factor(p_all$data$Zone, levels=unique(smpl_12S$Area))
+p_all$data$Zone <- factor(p_all$data$Zone, levels=unique(smpl_12S$Zone))
 p_all
 
 ##Statistical analysis - Fish
