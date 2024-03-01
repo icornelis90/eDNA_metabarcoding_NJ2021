@@ -88,9 +88,6 @@ data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol
 data_replicaten$Environment <- env$Environment
 data_replicaten$Zone <- env$Zone
 
-data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
-data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
-
 data_replicaten$Impact <- as.factor(data_replicaten$Impact)
 data_replicaten$Impact_biol <- as.factor(data_replicaten$Impact_biol)
 data_replicaten$Biol_replicate <- as.factor(data_replicaten$Biol_replicate)
@@ -98,12 +95,8 @@ data_replicaten$Environment <- as.factor(data_replicaten$Environment)
 data_replicaten$Zone <- as.factor(data_replicaten$Zone)
 data_replicaten$Env_Zon <- as.factor(paste(data_replicaten$Environment,data_replicaten$Zone,sep="-"))
 
-data_replicaten_OWF$Impact <- as.factor(data_replicaten_OWF$Impact)
-data_replicaten_OWF$Impact_biol <- as.factor(data_replicaten_OWF$Impact_biol)
-data_replicaten_OWF$Biol_replicate <- as.factor(data_replicaten_OWF$Biol_replicate)
-data_replicaten_OWF$Environmen_ <- as.factor(data_replicaten_OWF$Environment)
-data_replicaten_OWF$Zone <- as.factor(data_replicaten_OWF$Zone)
-data_replicaten_OWF$Env_Zon <- as.factor(paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zone,sep="-"))
+data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
+data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
 
 library("xlsx")
 write.xlsx(data_soorten, paste0(proj.path,"/Step5_Statistics/data_soorten.xlsx"), sheetName = "Sheet1", col.names = TRUE, row.names = TRUE, append = FALSE)
@@ -237,9 +230,16 @@ plot(Transformed_Zone_betadisper_j, hull=FALSE, ellipse=TRUE)
 
 #factor Zone OWF
 Transformed_OWF_betadisper_j <- betadisper(dist_soorten_OWF_transformed_bray, Zone_Impact_OWF_p, type="centroid")
+Transformed_OWF_betadisper_zone <- betadisper(dist_soorten_OWF_transformed_bray, Zone_OWF_p, type="centroid")
+Transformed_OWF_betadisper_impact <- betadisper(dist_soorten_OWF_transformed_bray, Impact_OWF_p, type="centroid")
 Transformed_OWF_permdisp_j <- permutest(Transformed_OWF_betadisper_j, permutations=9999)
-Transformed_OWF_permdisp_j #SIGN
-plot(Transformed_OWF_betadisper_j, hull=FALSE, ellipse=TRUE, label = F)
+Transformed_OWF_permdisp_z <- permutest(Transformed_OWF_betadisper_zone, permutations=9999)
+Transformed_OWF_permdisp_i <- permutest(Transformed_OWF_betadisper_impact, permutations=9999)
+Transformed_OWF_permdisp_j 
+Transformed_OWF_permdisp_z
+Transformed_OWF_permdisp_i
+
+plot(Transformed_OWF_betadisper_j, hull=FALSE, ellipse=TRUE, label = T)
 
 library("car")
 qqPlot(Transformed_OWF_betadisper_j$distances)
