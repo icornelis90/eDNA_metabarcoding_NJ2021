@@ -25,13 +25,19 @@ env_morph <- read.csv(paste0(proj.path.12S,"/Step5_Statistics/environmental_data
 #add color and pch to environmental data to create the plot 
 env_12S$pch <- ifelse(env_12S$Environment=="inside_OWF","1","21")
 env_12S$pch <- as.integer(env_12S$pch)
+#env_12S$Zone_color <- ifelse(env_12S$Niskin.sample %in% c("ft230_1","ft230_2","ft230_3"),
+#                             "red", env_12S$Zone_color )
 env_COI$pch <- ifelse(env_COI$Environment=="inside_OWF","1","21")
 env_COI$pch <- as.integer(env_COI$pch)
+#env_COI$Zone_color <- ifelse(env_COI$Niskin.sample %in% c("ft230_1","ft230_2","ft230_3"),
+#                             "red", env_COI$Zone_color )
 env_morph$Zone_color <- ifelse(env_morph$Zone=="Coast","limegreen", 
                                ifelse(env_morph$Zone=="Transition", "slateblue", 
                                       ifelse(env_morph$Zone=="Offshore","darkorange","red")))
 env_morph$pch <- ifelse(env_morph$Environment=="inside_OWF","1","21")
 env_morph$pch <- as.integer(env_morph$pch)
+#env_morph$Zone_color <- ifelse(env_morph$Niskin.sample %in% c("ft230"),
+#                               "red", env_morph$Zone_color )
 
 #create table for morphological data
 table_morph_Fish_2 <- table_morph_Fish[,2:ncol(table_morph_Fish)]
@@ -65,6 +71,12 @@ seqtab_Fish <- seqtab_Fish[,!colnames(seqtab_Fish) %in% Fish_zero]
 seqtab_Fish <- seqtab_Fish[!rownames(seqtab_Fish) %in% Fish_empty,]
 env_12S <- env_12S[!env_12S$Niskin.sample %in% Fish_empty,]
 
+#create rarecurve
+seqtab_FishASVs <- t(table_FishASVs[,1:(ncol(table_FishASVs)-11)])
+rarecurve(seqtab_FishASVs, ylab = "Fish ASVs", 
+          main = "Rarecurve of unrarefied samples before taxonomic assignment", 
+          col = as.vector(env_12S$Zone_color), label = F, step =1000)
+
 ### Invertebrate data
 # COI select ASVs assigned to invertebrates
 table_AnimaliaASVs <- as.data.frame(table_COI[table_COI$Kingdom %in% c("Animalia"),])
@@ -83,6 +95,13 @@ seqtab_Animalia <- seqtab_Animalia[,!colnames(seqtab_Animalia) %in% Animalia_zer
 seqtab_Animalia <- seqtab_Animalia[!rownames(seqtab_Animalia) %in% Animalia_empty,]
 
 env_COI <- env_COI[!env_COI$Niskin.sample %in% Animalia_empty,]
+
+#create rarecurve
+seqtab_InvASVs <- t(table_AnimaliaASVs[,1:(ncol(table_AnimaliaASVs)-11)])
+options(scipen = 999)
+rarecurve(seqtab_InvASVs, ylab = "Invertebrate ASVs", xlim=c(0, 250000),
+          main = "Rarecurve of unrarefied samples before taxonomic assignment", 
+          col = as.vector(env_COI$Zone_color), label = F, step =1000)
 
 ####### create nMDS-plots #######
 ##### Coast vs Offshore
