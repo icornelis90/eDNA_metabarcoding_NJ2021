@@ -351,6 +351,27 @@ p_all$layers <- p_all$layers[-1]
 p_all$data$Zone <- factor(p_all$data$Zone, levels=unique(smpl_eDNA_Fish$Zone))
 p_all
 
+##Save Data
+SaveData_eDNA_rarefied <- list(ps_micorDecon_rarefied_Fish = ps_eDNA_Fish_rarefied,
+                               ps_micorDecon_rarefied_Inv = ps_eDNA_Inv_rarefied,
+                               smpl_micorDecon_rarefied_Fish = smpl_eDNA_12S,
+                               smpl_micorDecon_rarefied_Inv = smpl_eDNA_Inv_rarefied)
+saveRDS(SaveData_eDNA_rarefied, paste0(proj.path.12S,
+                                       "/MiFish_UE-S_concatenated/results_microDecon/R_Environment/microDecon_rarefied.rds"))
+SaveData_morph_unrarefied <- list(ps_morph_unrarefied_Fish = ps_morph_Fish,
+                                  ps_morph_unrarefied_Inv = ps_morph_Inv,
+                                  smpl_morph_unrarefied_Fish = smpl_morph_Fish_raw,
+                                  smpl_morph_unrarefied_Inv = smpl_morph_Inv_raw)
+saveRDS(SaveData_morph_unrarefied, paste0(proj.path.12S,
+                                          "/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Morph_unrarefied.rds"))
+SaveData_morph_rarefied <- list(ps_morph_rarefied_Fish = ps_morph_Fish_rarefied,
+                                ps_morph_rarefied_Inv = ps_morph_Inv_rarefied,
+                                smpl_morph_rarefied_Fish = smpl_morph_Fish_raw,
+                                smpl_morph_rarefied_Inv = smpl_morph_Inv_raw)
+saveRDS(SaveData_morph_rarefied, paste0(proj.path.12S,
+                                        "/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Morph_rarefied.rds"))
+
+
 ##Statistical analysis - Fish
 #Alpha diversity
 library(car)
@@ -424,11 +445,11 @@ shapiro.test(resid_demersal)
 library(MASS)
 boxcox(model_DNA_AllFish)
 bc<-boxcox(model_DNA_AllFish)
-bc$x[which(bc$y==max(bc$y))] #0.4646465
+bc$x[which(bc$y==max(bc$y))] #0.95539
 
 boxcox(model_DNA_Demersal)
 bc<-boxcox(model_DNA_Demersal)
-bc$x[which(bc$y==max(bc$y))] #0.989899
+bc$x[which(bc$y==max(bc$y))] #0.9971722
 
 #Shannon diversity
 DNA_Shannon <- smpl_all
@@ -446,8 +467,8 @@ NumOfSp_Demersal <- as.data.frame(cbind(DNA_Shannon_Demersal$NumOfSp,
 #model_Shannon_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish, family=poisson)
 #model_Shannon_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal, family=poisson) 
 
-model_Shannon_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish)
-model_Shannon_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal) 
+model_Shannon_AllFish <- lm(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish)
+model_Shannon_Demersal <- lm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal) 
 
 anova_Shannon_AllFish <- Anova(model_Shannon_AllFish, type=2)# SIGN for station , not sign for biological replicates
 summary(model_Shannon_AllFish)
@@ -464,7 +485,7 @@ sum(es[,"eta.sq"]) # 0.9606682
 
 es <- etaSquared(model_Shannon_Demersal, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 1.041221
+sum(es[,"eta.sq"]) # 1.000595
 
 cld(lsmeans(model_Shannon_AllFish, ~ Zone*Method), Letters=letters)
 cld(lsmeans(model_Shannon_Demersal, ~ Zone*Method), Letters=letters)
