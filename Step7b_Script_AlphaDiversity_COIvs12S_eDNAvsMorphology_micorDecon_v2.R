@@ -140,12 +140,12 @@ eDNA_Fish_Diversity <- estimateD(ps_eDNA_Fish, datatype="abundance", base="cover
                               which(Coverage_eDNA_Fish$SampleCoverage > 0.5)] ),
                             conf=0.95) #select the minimum coverage
 eDNA_Fish_Diversity_morph <- estimateD(ps_eDNA_Fish, datatype="abundance",
-                                base="coverage", level=0.9419454, conf=0.95)
+                                base="coverage", level=0.94, conf=0.95)
 
 ##Rarefy the data based on a coverage just below the minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage will remove the sample from the rarefied dataset)
 ps_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_unrarefied_Fish, correct_singletons = TRUE,
-                                           iter = 1, coverage = 0.92, drop_lowcoverage = T)
+                                           iter = 1, coverage = 0.94, drop_lowcoverage = T)
 table_rarefied_Fish <- as.data.frame(ps_rarefied_Fish@otu_table)
 
 ##Optional: plot the rarefied and unrarefied data for visualization 
@@ -183,6 +183,12 @@ Taxonomy_eDNA_Inv <- as.matrix(rownames(ps_eDNA_Inv))
 rownames(Taxonomy_eDNA_Inv) <- rownames(ps_eDNA_Inv)
 ps_unrarefied_Inv <- phyloseq(otu_table(ps_eDNA_Inv, taxa_are_rows = TRUE), 
                               sample_data(smpl_eDNA_Inv),tax_table(Taxonomy_eDNA_Inv))
+
+SaveData <- list(ps_microDecon_unrarefied_Fish = ps_eDNA_Fish,
+                 ps_micorDecon_unrarefied_Inv = ps_eDNA_Inv,
+                 smpl_microDecon_unrarefied_Fish = smpl_eDNA_Fish,
+                 smpl_microDecon_unrarefied_Inv = smpl_eDNA_Inv)
+saveRDS(SaveData, paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/microDecon_unrarefied.rds"))
 
 ##Calculate the Coverage
 Coverage_eDNA_Inv <- phyloseq_coverage(physeq = ps_unrarefied_Inv)
@@ -235,9 +241,7 @@ smpl_morph_Fish_raw <- env_morph
 rownames(smpl_morph_Fish_raw) <- colnames(ps_morph_Fish)
 Taxonomy_morph_Fish <- as.matrix(rownames(table_morph_Fish_2))
 rownames(Taxonomy_morph_Fish) <- rownames(ps_morph_Fish)
-ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE))#,
-                                sample_data(smpl_morph_Fish_raw),
-                                tax_table(Taxonomy_morph_Fish))
+ps_morph_Fish_phylo <- phyloseq(otu_table(ps_morph_Fish, taxa_are_rows = TRUE))
 
 ##Calculate the Coverage
 Coverage_morph_Fish <- phyloseq_coverage(physeq = ps_morph_Fish_phylo)
@@ -252,7 +256,7 @@ morph_Fish_Diversity <- estimateD(ps_morph_Fish, datatype="abundance", base="cov
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ##(using the minimum coverage that will not generate an error)
 ps_morph_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_morph_Fish_phylo, 
-                                                 iter = 1, coverage = 0.92, drop_lowcoverage = T)
+                                                 iter = 1, coverage = 0.94, drop_lowcoverage = T)
 table_morph_rarefied_Fish <- as.data.frame(ps_morph_rarefied_Fish@.Data)
 
 ###Prepare the Morphological data for the epibenthos catch 
@@ -262,9 +266,7 @@ smpl_morph_Inv_raw <- env_morph#[!env_morph$Niskin.sample == "ft230",]
 rownames(smpl_morph_Inv_raw) <- colnames(ps_morph_Inv)
 Taxonomy_morph_Inv <- as.matrix(rownames(table_morph_Inv_2))
 rownames(Taxonomy_morph_Inv) <- rownames(ps_morph_Inv)
-ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE))#,
-                               sample_data(smpl_morph_Inv_raw),
-                               tax_table(Taxonomy_morph_Inv))
+ps_morph_Inv_phylo <- phyloseq(otu_table(ps_morph_Inv, taxa_are_rows = TRUE))
 
 iNext_morph_Inv <- iNEXT(ps_morph_Inv, q=c(0), datatype="abundance")
 
@@ -280,7 +282,7 @@ morph_Inv_Diversity <- estimateD(ps_morph_Inv, datatype="abundance", base="cover
 
 ##Rarefy the data based on a minimum coverage using the function phyloseq_coverage_raref,
 ps_morph_rarefied_Inv <- phyloseq_coverage_raref(physeq = ps_morph_Inv_phylo, correct_singletons = T,
-                                                  iter = 1, coverage = 0.93, drop_lowcoverage = T)
+                                                  iter = 1, coverage = 0.96, drop_lowcoverage = T)
 table_morph_rarefied_Inv <- as.data.frame(ps_morph_rarefied_Inv@.Data)
 
 ###create a boxplot with the Coverage per method
