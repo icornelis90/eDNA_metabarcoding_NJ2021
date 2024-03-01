@@ -35,7 +35,7 @@ proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 #1 read data
 #setwd(paste0("home/genomics/icornelis/Demultiplex_Liu"))
 #upload data
-table_morph <- readxl::read_excel(paste0(proj.path,"/Step5_Statistics/Morphology_Abundancy_Raw.xlsx"),sheet = "Epi")
+table_morph <- readxl::read_excel(paste0(proj.path,"/Step5_Statistics/Morphology_Abundancy_Standerdized.xlsx"),sheet = "Epi - Standerdized")
 #env <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data.csv"),  header=TRUE, sep=";")
 env_morph <- read.csv(paste0(proj.path,"/Step5_Statistics/environmental_data_morph.csv"),  header=TRUE, sep=";")
 
@@ -72,7 +72,6 @@ data_replicaten$Impact_biol <- paste(data_replicaten$Impact,data_replicaten$Biol
 data_replicaten$Environment <- env_morph$Environment
 data_replicaten$Zone <- env_morph$Zone
 
-data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
 data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
 
 data_replicaten$Impact <- as.factor(data_replicaten$Impact)
@@ -80,15 +79,10 @@ data_replicaten$Impact_biol <- as.factor(data_replicaten$Impact_biol)
 data_replicaten$Biol_replicate <- as.factor(data_replicaten$Biol_replicate)
 data_replicaten$Environment <- as.factor(data_replicaten$Environment)
 data_replicaten$Zone <- as.factor(data_replicaten$Zone)
-data_replicaten$Env_Zon <- paste(data_replicaten$Environment,data_replicaten$Zones,sep="-")
+data_replicaten$Env_Zon <- paste(data_replicaten$Environment,data_replicaten$Zone,sep="-")
 
-data_replicaten_OWF$Impact <- as.factor(data_replicaten_OWF$Impact)
-data_replicaten_OWF$Impact_biol <- as.factor(data_replicaten_OWF$Impact_biol)
-data_replicaten_OWF$Biol_replicate <- as.factor(data_replicaten_OWF$Biol_replicate)
-data_replicaten_OWF$Environmen_ <- as.factor(data_replicaten_OWF$Environment)
-data_replicaten_OWF$Zone <- as.factor(data_replicaten_OWF$Zone)
-data_replicaten_OWF$Env_Zon <- paste(data_replicaten_OWF$Environment,data_replicaten_OWF$Zone,sep="-")
-
+data_replicaten_OWF <- data_replicaten %>% filter(grepl("_OWF", data_replicaten$Environment))
+data_soorten_OWF <- data_soorten[data_replicaten_OWF$V1,]
 ```
 
 
@@ -130,7 +124,6 @@ Zone_p <- data_replicaten$Zone
 Impact_OWF_p <- data_replicaten_OWF$Environment
 Zone_OWF_p <- data_replicaten_OWF$Zone
 Zone_Impact_OWF_p <- data_replicaten_OWF$Env_Zon
-
 
 Impact_biol_repl_p <- data_replicaten$Impact_biol
 Biol_repl_p <- data_replicaten$Biol_replicate
