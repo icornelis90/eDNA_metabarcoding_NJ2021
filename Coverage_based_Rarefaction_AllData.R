@@ -617,6 +617,28 @@ boxcox(model_Shannon2_Inv)
 bc<-boxcox(model_Shannon2_Inv)
 bc$x[which(bc$y==max(bc$y))]
 
+## Calculate relative read abundances assigned
+Select_Transition <- c(smpl_eDNA_Inv$Niskin.sample[which(smpl_eDNA_Inv$Zone == "Transition")])
+rarefied_eDNA_Inv_Transition <- table_rarefied_Inv[, colnames(table_rarefied_Inv) %in% Select_Transition]
+Clytia_hemisphaerica <- sum(rarefied_eDNA_Inv_Transition[rownames(rarefied_eDNA_Inv_Transition) %in% "Clytia hemisphaerica",])
+Total_reads <- sum(rarefied_eDNA_Inv_Transition)
+Clytia_hemisphaerica/Total_reads
+
+Select_Transition <- c(smpl_eDNA_Fish$Niskin.sample[which(smpl_eDNA_Fish$Zone == "Transition")])
+rarefied_eDNA_Fish_Transition <- table_rarefied_Fish[, colnames(table_rarefied_Fish) %in% Select_Transition]
+Whiting <- sum(rarefied_eDNA_Fish_Transition[rownames(rarefied_eDNA_Fish_Transition) %in% "Merlangius merlangus",])
+Total_reads <- sum(rarefied_eDNA_Fish_Transition)
+Whiting/Total_reads
+Dab <- sum(rarefied_eDNA_Fish_Transition[rownames(rarefied_eDNA_Fish_Transition) %in% "Limanda limanda",])
+Dab/Total_reads
+
+Select_Transition <- c(smpl_morph_Fish_raw$Niskin.sample[which(smpl_morph_Fish_raw$Zone == "Transition")])
+rarefied_morph_Transition <- table_morph_rarefied_Fish[, colnames(table_morph_rarefied_Fish) %in% Select_Transition]
+Whiting <- sum(rarefied_morph_Transition[rownames(rarefied_morph_Transition) %in% "Merlangius merlangus",])
+Total_reads <- sum(rarefied_morph_Transition)
+Whiting/Total_reads
+Dab <- sum(rarefied_morph_Transition[rownames(rarefied_morph_Transition) %in% "Limanda limanda",])
+Dab/Total_reads
 
 
 
