@@ -26,6 +26,7 @@ libraries <- c("BiocManager"
                , "metagMisc"
                , "iNEXT"
                , "ggClusterNet"
+               , "plotrix"
 )
 
 for (opties in libraries){
@@ -95,6 +96,7 @@ ps_rarefied_12S <- phyloseq_coverage_raref(physeq = ps_unrarefied_12S,
                                             iter = 1, coverage = 0.94, drop_lowcoverage = T)
 table_rarefied_12S <- as.data.frame(ps_rarefied_12S@otu_table)
 table_rarefied_12S <- cbind(table_rarefied_12S, Taxonomy_eDNA_12S)
+table_unrarefied_12S_2 <- cbind(ps_eDNA_12S, Taxonomy_eDNA_12S)
 
 ###Rarefy the COI eDNA metabarcoding data
 ## Create a phyloseq object
@@ -119,12 +121,20 @@ ps_rarefied_COI <- phyloseq_coverage_raref(physeq = ps_unrarefied_COI,
                                            iter = 1, coverage = 0.92, drop_lowcoverage = T)
 table_rarefied_COI <- as.data.frame(ps_rarefied_COI@otu_table)
 table_rarefied_COI <- cbind(table_rarefied_COI, Taxonomy_eDNA_COI)
+table_unrarefied_COI_2 <- cbind(ps_eDNA_COI, Taxonomy_eDNA_COI)
 
 ###Prepare the 12S eDNA metabarcoding data
 ##select marine Fish species
 fish_classes <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_classes.rds"))
 freshwater_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_v2/REnvironment/Fish_Freshwater.rds"))
 demersal_fish <- readRDS(file = paste0(proj.path.12S,"/MiFish_UE-S_concatenated/results_microDecon/R_Environment/Demersal_Fish.rds"))
+
+table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_12S_2[table_unrarefied_12S_2$Class %in% fish_classes,])
+table_unrarefied_FishASVs <- as.data.frame(table_unrarefied_FishASVs[
+  !table_unrarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
+rownames(table_unrarefied_FishASVs) <- table_unrarefied_FishASVs$ASV
+table_unrarefied_FishASVs[is.na(table_unrarefied_FishASVs)] <- 0
+
 table_rarefied_FishASVs <- as.data.frame(table_rarefied_12S[table_rarefied_12S$Class %in% fish_classes,])
 table_rarefied_FishASVs <- as.data.frame(table_rarefied_FishASVs[
   !table_rarefied_FishASVs$Species %in% c(freshwater_fish, "NA"),])
@@ -133,8 +143,18 @@ table_rarefied_FishASVs[is.na(table_rarefied_FishASVs)] <- 0
 
 ##merge the reads according on fish species level
 taxo <- "Species"
+
+table_unrarefied_Fish <- aggregate(table_unrarefied_FishASVs[,1:(ncol(table_unrarefied_FishASVs)-11)], 
+                                   by= list(as.factor(table_unrarefied_FishASVs[,taxo])),FUN=sum)
+rownames(table_unrarefied_Fish) <- as.character(table_unrarefied_Fish$Group.1)
+table_unrarefied_Fish$Group.1 <- NULL
+table_unrarefied_Fish <- table_unrarefied_Fish[!rowSums(table_unrarefied_Fish) == 0,]
+table_unrarefied_Fish <- table_unrarefied_Fish[,!colSums(table_unrarefied_Fish) == 0]
+table_unrarefied_Demersal <-  table_unrarefied_Fish[rownames(table_unrarefied_Fish) %in% demersal_fish,]
+table_unrarefied_Demersal <- table_unrarefied_Demersal[,!colSums(table_unrarefied_Demersal) == 0]
+
 table_rarefied_Fish <- aggregate(table_rarefied_FishASVs[,1:(ncol(table_rarefied_FishASVs)-11)], 
-                                   by= list(as.factor(table_rarefied_FishASVs[,taxo])),FUN=sum)
+                                 by= list(as.factor(table_rarefied_FishASVs[,taxo])),FUN=sum)
 rownames(table_rarefied_Fish) <- as.character(table_rarefied_Fish$Group.1)
 table_rarefied_Fish$Group.1 <- NULL
 table_rarefied_Fish <- table_rarefied_Fish[!rowSums(table_rarefied_Fish) == 0,]
@@ -144,13 +164,24 @@ table_rarefied_Demersal <- table_rarefied_Demersal[,!colSums(table_rarefied_Deme
 
 ###Prepare the COI eDNA metabarcoding data
 ##select Invertebrate species
+table_unrarefied_InvASVs <- as.data.frame(table_unrarefied_COI_2[table_unrarefied_COI_2$Kingdom %in% c("Animalia"),])
+table_unrarefied_InvASVs <- as.data.frame(table_unrarefied_InvASVs[!table_unrarefied_InvASVs$Species %in% "NA",])
+table_unrarefied_InvASVs <- as.data.frame(table_unrarefied_InvASVs[!table_unrarefied_InvASVs$Phylum %in% "Chordata",])
+table_unrarefied_InvASVs[is.na(table_unrarefied_InvASVs)] <- 0
+
 table_rarefied_InvASVs <- as.data.frame(table_rarefied_COI[table_rarefied_COI$Kingdom %in% c("Animalia"),])
 table_rarefied_InvASVs <- as.data.frame(table_rarefied_InvASVs[!table_rarefied_InvASVs$Species %in% "NA",])
 table_rarefied_InvASVs <- as.data.frame(table_rarefied_InvASVs[!table_rarefied_InvASVs$Phylum %in% "Chordata",])
 table_rarefied_InvASVs[is.na(table_rarefied_InvASVs)] <- 0
 
 ##merge the reads according on invertebrate species level
-taxo <- "Species"
+table_unrarefied_Inv <- aggregate(table_unrarefied_InvASVs[,1:(ncol(table_unrarefied_InvASVs)-11)],
+                                  by= list(as.factor(table_unrarefied_InvASVs[,taxo])),FUN=sum)
+rownames(table_unrarefied_Inv) <-as.character(table_unrarefied_Inv$Group.1)
+table_unrarefied_Inv$Group.1 <- NULL
+table_unrarefied_Inv <- table_unrarefied_Inv[!rowSums(table_unrarefied_Inv) == 0,]
+table_unrarefied_Inv <- table_unrarefied_Inv[,!colSums(table_unrarefied_Inv) == 0]
+
 table_rarefied_Inv <- aggregate(table_rarefied_InvASVs[,1:(ncol(table_rarefied_InvASVs)-11)],
                                   by= list(as.factor(table_rarefied_InvASVs[,taxo])),FUN=sum)
 rownames(table_rarefied_Inv) <-as.character(table_rarefied_Inv$Group.1)
@@ -220,8 +251,11 @@ plot_Fish_morph_rarefied <- plot_richness(ps_morph_rarefied_Fish, x="Zone",
 plot_Fish_morph_rarefied 
 
 ##Select demersal fish species from the morphological data
-table_morph_Demersal <- table_morph_rarefied_Fish[rownames(table_morph_rarefied_Fish) %in% demersal_fish,]
-table_morph_Demersal <- table_morph_Demersal[,!colSums(table_morph_Demersal) == 0]
+table_morph_unrarefied_Demersal <- ps_morph_Fish[rownames(ps_morph_Fish) %in% demersal_fish,]
+table_morph_unrarefied_Demersal <- table_morph_unrarefied_Demersal[,!colSums(table_morph_unrarefied_Demersal) == 0]
+
+table_morph_rarefied_Demersal <- table_morph_rarefied_Fish[rownames(table_morph_rarefied_Fish) %in% demersal_fish,]
+table_morph_rarefied_Demersal <- table_morph_rarefied_Demersal[,!colSums(table_morph_rarefied_Demersal) == 0]
 
 ###Prepare the Morphological data for the epibenthos catch 
 ## Create a phyloseq object
@@ -273,83 +307,246 @@ box_plot_rarefied
 smpl_eDNA_Inv_rarefied <- smpl_eDNA_COI[smpl_eDNA_COI$Niskin.sample %in% 
                                           colnames(table_rarefied_Inv),]
 smpl_morph_Demersal <- smpl_morph_Fish_raw[rownames(smpl_morph_Fish_raw) %in% 
-                                       colnames(table_morph_Demersal),]
+                                       colnames(table_morph_rarefied_Demersal),]
 
-smpl_all <- bind_rows(smpl_eDNA_Fish,
-                      smpl_eDNA_Fish,
-                      smpl_eDNA_Inv_rarefied,
-                      smpl_morph_Fish_raw,
-                      smpl_morph_Demersal,
-                      smpl_morph_Inv_raw)
+smpl_all_rarefied <- bind_rows(smpl_eDNA_Fish,
+                               smpl_eDNA_Fish,
+                               smpl_eDNA_Inv_rarefied,
+                               smpl_morph_Fish_raw,
+                               smpl_morph_Demersal,
+                               smpl_morph_Inv_raw)
 
-rownames(smpl_all)[1:66] <- paste(rownames(smpl_eDNA_Fish), 
-                                  "eDNA_Fish_All", sep="_")
-rownames(smpl_all)[67:132] <- paste(rownames(smpl_eDNA_Fish), 
-                                  "eDNA_Fish_Demersal", sep="_")
-rownames(smpl_all)[133:194] <- paste(rownames(smpl_eDNA_Inv_rarefied), 
-                                    "eDNA_Inv", sep="_")
-rownames(smpl_all)[195:216] <- paste(rownames(smpl_morph_Fish_raw),
-                                     "Morphology_Fish_All", sep="_")
-rownames(smpl_all)[217:237] <- paste(rownames(smpl_morph_Demersal),
-                                     "Morphology_Fish_Demersal", sep="_")
-rownames(smpl_all)[238:259] <- paste(rownames(smpl_morph_Inv_raw),
-                                     "Morphology_Inv", sep="_")
+rownames(smpl_all_rarefied)[1:66] <- paste(rownames(smpl_eDNA_Fish), 
+                                           "eDNA_Fish_All", sep="_")
+rownames(smpl_all_rarefied)[67:132] <- paste(rownames(smpl_eDNA_Fish), 
+                                             "eDNA_Fish_Demersal", sep="_")
+rownames(smpl_all_rarefied)[133:194] <- paste(rownames(smpl_eDNA_Inv_rarefied), 
+                                              "eDNA_Inv", sep="_")
+rownames(smpl_all_rarefied)[195:216] <- paste(rownames(smpl_morph_Fish_raw),
+                                              "Morphology_Fish_All", sep="_")
+rownames(smpl_all_rarefied)[217:237] <- paste(rownames(smpl_morph_Demersal),
+                                              "Morphology_Fish_Demersal", sep="_")
+rownames(smpl_all_rarefied)[238:259] <- paste(rownames(smpl_morph_Inv_raw),
+                                              "Morphology_Inv", sep="_")
 
-smpl_all$Method <- c(rep("eDNA_All", nrow(smpl_eDNA_Fish)),
-                     rep("eDNA_Demersal", nrow(smpl_eDNA_Fish)),
-                     rep("eDNA_All", nrow(smpl_eDNA_Inv_rarefied)), 
-                     rep("Morphology_All", nrow(smpl_morph_Fish_raw)),
-                     rep("Morphology_Demersal", nrow(smpl_morph_Demersal)),
-                     rep("Morphology_All", nrow(smpl_morph_Inv_raw)))
-smpl_all$Organism <- c(rep("Fish", nrow(smpl_eDNA_Fish)), 
-                       rep("Fish", nrow(smpl_eDNA_Fish)), 
-                       rep("Invertebrates", nrow(smpl_eDNA_Inv_rarefied)), 
-                       rep("Fish", nrow(smpl_morph_Fish_raw)),
-                       rep("Fish", nrow(smpl_morph_Demersal)),
-                       rep("Invertebrates", nrow(smpl_morph_Inv_raw)))
+smpl_all_rarefied$Method <- c(rep("eDNA_All", nrow(smpl_eDNA_Fish)),
+                              rep("eDNA_Demersal", nrow(smpl_eDNA_Fish)),
+                              rep("eDNA_All", nrow(smpl_eDNA_Inv_rarefied)), 
+                              rep("Morphology_All", nrow(smpl_morph_Fish_raw)),
+                              rep("Morphology_Demersal", nrow(smpl_morph_Demersal)),
+                              rep("Morphology_All", nrow(smpl_morph_Inv_raw)))
+smpl_all_rarefied$Organism <- c(rep("Fish", nrow(smpl_eDNA_Fish)), 
+                                rep("Fish", nrow(smpl_eDNA_Fish)), 
+                                rep("Invertebrates", nrow(smpl_eDNA_Inv_rarefied)), 
+                                rep("Fish", nrow(smpl_morph_Fish_raw)),
+                                rep("Fish", nrow(smpl_morph_Demersal)),
+                                rep("Invertebrates", nrow(smpl_morph_Inv_raw)))
 
 ##Prepare the abundance table for the combined fish data
 ps_eDNA_Fish_rarefied <- table_rarefied_Fish
-ps_eDNA_Fish_nonpelagic <- table_rarefied_Demersal
+ps_eDNA_Fish_rarefied_nonpelagic <- table_rarefied_Demersal
 ps_morph_Fish_rarefied <- table_morph_rarefied_Fish
-ps_morph_Fish_Demersal <- table_morph_Demersal
+ps_morph_Fish_rarefied_Demersal <- table_morph_rarefied_Demersal
 ps_eDNA_Inv_rarefied <- table_rarefied_Inv
 ps_morph_Inv_rarefied <- table_morph_rarefied_Inv
 
 colnames(ps_eDNA_Fish_rarefied) <- paste(colnames(table_rarefied_Fish),
-                                          "eDNA_Fish_All", sep="_")
-colnames(ps_eDNA_Fish_nonpelagic) <- paste(colnames(ps_eDNA_Fish_nonpelagic),
-                                         "eDNA_Fish_Demersal", sep="_")
+                                                  "eDNA_Fish_All", sep="_")
+colnames(ps_eDNA_Fish_rarefied_nonpelagic) <- paste(colnames(ps_eDNA_Fish_rarefied_nonpelagic),
+                                                    "eDNA_Fish_Demersal", sep="_")
 colnames(ps_morph_Fish_rarefied) <- paste(colnames(table_morph_rarefied_Fish), 
                                           "Morphology_Fish_All", sep="_")
-colnames(ps_morph_Fish_Demersal) <- paste(colnames(ps_morph_Fish_Demersal), 
-                                          "Morphology_Fish_Demersal", sep="_")
+colnames(ps_morph_Fish_rarefied_Demersal) <- paste(colnames(ps_morph_Fish_rarefied_Demersal), 
+                                                   "Morphology_Fish_Demersal", sep="_")
 colnames(ps_eDNA_Inv_rarefied) <- paste(colnames(table_rarefied_Inv),
-                                         "eDNA_Inv", sep="_")
+                                        "eDNA_Inv", sep="_")
 colnames(ps_morph_Inv_rarefied) <- paste(colnames(table_morph_rarefied_Inv), 
-                                          "Morphology_Inv", sep="_")
+                                         "Morphology_Inv", sep="_")
 
-ps_all <- merge(ps_eDNA_Fish_rarefied, ps_eDNA_Fish_nonpelagic, by.x=0, by.y=0, all=T)
-ps_all <- merge(ps_all, ps_morph_Fish_rarefied, by.x=1, by.y=0, all=T)
-ps_all <- merge(ps_all, ps_morph_Fish_Demersal, by.x=1, by.y=0, all=T)
-ps_all <- merge(ps_all, ps_eDNA_Inv_rarefied, by.x=1, by.y=0, all=T)
-ps_all <- merge(ps_all, ps_morph_Inv_rarefied, by.x=1, by.y=0, all=T)
-rownames(ps_all) <- ps_all$Row.names
-ps_all$Row.names <- NULL
-ps_all[is.na(ps_all)] <- 0
-Taxonomy_all <- as.matrix(rownames(ps_all))
-rownames(Taxonomy_all) <- rownames(ps_all)
+ps_all_rarefied <- merge(ps_eDNA_Fish_rarefied, ps_eDNA_Fish_rarefied_nonpelagic, by.x=0, by.y=0, all=T)
+ps_all_rarefied <- merge(ps_all_rarefied, ps_morph_Fish_rarefied, by.x=1, by.y=0, all=T)
+ps_all_rarefied <- merge(ps_all_rarefied, ps_morph_Fish_rarefied_Demersal, by.x=1, by.y=0, all=T)
+ps_all_rarefied <- merge(ps_all_rarefied, ps_eDNA_Inv_rarefied, by.x=1, by.y=0, all=T)
+ps_all_rarefied <- merge(ps_all_rarefied, ps_morph_Inv_rarefied, by.x=1, by.y=0, all=T)
+rownames(ps_all_rarefied) <- ps_all_rarefied$Row.names
+ps_all_rarefied$Row.names <- NULL
+ps_all_rarefied[is.na(ps_all_rarefied)] <- 0
+Taxonomy_all_rarefied <- as.matrix(rownames(ps_all_rarefied))
+rownames(Taxonomy_all_rarefied) <- rownames(ps_all_rarefied)
 
-ps_all_phylo <- phyloseq(otu_table(ps_all , taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
-p_all <- plot_richness(ps_all_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
+ps_all_rarefied_phylo <- phyloseq(otu_table(ps_all_rarefied, taxa_are_rows = TRUE),
+                                  sample_data(smpl_all_rarefied),tax_table(Taxonomy_all_rarefied))
+#p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
+p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c("Observed")) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
-  scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
+  scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
-p_all$layers <- p_all$layers[-1]
-p_all$data$Zone <- factor(p_all$data$Zone, levels=unique(smpl_eDNA_Fish$Zone))
-p_all
+p_all_rarefied_box$layers <- p_all_rarefied_box$layers[-1]
+p_all_rarefied_box$data$Zone <- factor(p_all_rarefied_box$data$Zone, levels=unique(smpl_eDNA_Fish$Zone))
+p_all_rarefied_box
+
+p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c("Observed")) + 
+  #geom_point(aes(color=Method), size = 3) + 
+  geom_smooth(method=NULL, aes(color=Method, fill=Method,as.numeric(Zone), value)) +
+  scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  facet_grid(variable~Organism, scales = "free")
+p_all_rarefied_box$layers <- p_all_rarefied_box$layers[-1]
+p_all_rarefied_box$data$Zone <- factor(p_all_rarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_rarefied_box
+
+p_all_rarefied_line <- estimate_richness(ps_all_rarefied_phylo, measures="Observed", split = T)
+p_all_rarefied_line <- cbind(p_all_rarefied_line, ps_all_rarefied_phylo@sam_data)
+p_all_rarefied_line_plot <- p_all_rarefied_line %>%
+  group_by(Organism, Method, Zone) %>% 
+  summarise_at(vars("Observed"), c(mean = mean, sd = sd, se = std.error))
+p_all_rarefied_line_plot$lower <- p_all_rarefied_line_plot$mean - p_all_rarefied_line_plot$sd
+p_all_rarefied_line_plot$upper <- p_all_rarefied_line_plot$mean + p_all_rarefied_line_plot$sd
+p_all_rarefied_line_plot$lowerse <- p_all_rarefied_line_plot$mean - p_all_rarefied_line_plot$se
+p_all_rarefied_line_plot$upperse <- p_all_rarefied_line_plot$mean + p_all_rarefied_line_plot$se
+
+p_all_rarefied_line2 <- ggplot(p_all_rarefied_line_plot, aes(x=Zone, y=mean, group = Method)) + 
+  geom_point(aes(color=Method), size = 3) + 
+  #geom_errorbar(aes(color=Method, ymin = lower, ymax = upper), width = 0.2, size = 0.5) +
+  geom_errorbar(aes(color=Method, ymin = lowerse, ymax = upperse), width = 0.2, size = 0.5) +
+  geom_line(linetype = "longdash", aes(color=Method), size = 1)+
+  scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme_bw()+
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  labs(y = "Richness")+
+  facet_grid(~Organism, scales = "free")
+p_all_rarefied_line2$data$Zone <- factor(p_all_rarefied_line2$data$Zone, levels=unique(smpl_eDNA_Fish$Zone))
+p_all_rarefied_line2
+
+###Create plot with the un-rarefied data
+##Prepare the smpl matrix for the combined fish data
+smpl_eDNA_Inv_unrarefied <- smpl_eDNA_COI[smpl_eDNA_COI$Niskin.sample %in% 
+                                          colnames(table_unrarefied_Inv),]
+smpl_morph_Demersal <- smpl_morph_Fish_raw[rownames(smpl_morph_Fish_raw) %in% 
+                                             colnames(table_morph_unrarefied_Demersal),]
+
+smpl_all_unrarefied <- bind_rows(smpl_eDNA_12S,
+                                 smpl_eDNA_12S,
+                                 smpl_eDNA_Inv_unrarefied,
+                                 smpl_morph_Fish_raw,
+                                 smpl_morph_Demersal,
+                                 smpl_morph_Inv_raw)
+
+rownames(smpl_all_unrarefied)[1:66] <- paste(rownames(smpl_eDNA_12S), 
+                                             "eDNA_Fish_All", sep="_")
+rownames(smpl_all_unrarefied)[67:132] <- paste(rownames(smpl_eDNA_12S), 
+                                               "eDNA_Fish_Demersal", sep="_")
+rownames(smpl_all_unrarefied)[133:197] <- paste(rownames(smpl_eDNA_Inv_unrarefied), 
+                                                "eDNA_Inv", sep="_")
+rownames(smpl_all_unrarefied)[198:219] <- paste(rownames(smpl_morph_Fish_raw),
+                                                "Morphology_Fish_All", sep="_")
+rownames(smpl_all_unrarefied)[220:241] <- paste(rownames(smpl_morph_Demersal),
+                                                "Morphology_Fish_Demersal", sep="_")
+rownames(smpl_all_unrarefied)[242:263] <- paste(rownames(smpl_morph_Inv_raw),
+                                                "Morphology_Inv", sep="_")
+
+smpl_all_unrarefied$Method <- c(rep("eDNA_All", nrow(smpl_eDNA_12S)),
+                                rep("eDNA_Demersal", nrow(smpl_eDNA_12S)),
+                                rep("eDNA_All", nrow(smpl_eDNA_Inv_unrarefied)), 
+                                rep("Morphology_All", nrow(smpl_morph_Fish_raw)),
+                                rep("Morphology_Demersal", nrow(smpl_morph_Demersal)),
+                                rep("Morphology_All", nrow(smpl_morph_Inv_raw)))
+smpl_all_unrarefied$Organism <- c(rep("Fish", nrow(smpl_eDNA_12S)), 
+                                  rep("Fish", nrow(smpl_eDNA_12S)), 
+                                  rep("Invertebrates", nrow(smpl_eDNA_Inv_unrarefied)), 
+                                  rep("Fish", nrow(smpl_morph_Fish_raw)),
+                                  rep("Fish", nrow(smpl_morph_Demersal)),
+                                  rep("Invertebrates", nrow(smpl_morph_Inv_raw)))
+
+##Prepare the abundance table for the combined fish data
+ps_eDNA_Fish_unrarefied <- table_unrarefied_Fish
+ps_eDNA_Fish_unrarefied_nonpelagic <- table_unrarefied_Demersal
+ps_morph_Fish_unrarefied <- table_morph_Fish_2
+ps_morph_Fish_unrarefied_Demersal <- table_morph_unrarefied_Demersal
+ps_eDNA_Inv_unrarefied <- table_unrarefied_Inv
+ps_morph_Inv_unrarefied <- table_morph_Inv_2
+
+colnames(ps_eDNA_Fish_unrarefied) <- paste(colnames(table_unrarefied_Fish),
+                                           "eDNA_Fish_All", sep="_")
+colnames(ps_eDNA_Fish_unrarefied_nonpelagic) <- paste(colnames(ps_eDNA_Fish_unrarefied_nonpelagic),
+                                                      "eDNA_Fish_Demersal", sep="_")
+colnames(ps_morph_Fish_unrarefied) <- paste(colnames(ps_morph_Fish_unrarefied), 
+                                            "Morphology_Fish_All", sep="_")
+colnames(ps_morph_Fish_unrarefied_Demersal) <- paste(colnames(ps_morph_Fish_unrarefied_Demersal), 
+                                                     "Morphology_Fish_Demersal", sep="_")
+colnames(ps_eDNA_Inv_unrarefied) <- paste(colnames(table_unrarefied_Inv),
+                                          "eDNA_Inv", sep="_")
+colnames(ps_morph_Inv_unrarefied) <- paste(colnames(ps_morph_Inv_unrarefied), 
+                                           "Morphology_Inv", sep="_")
+
+ps_all_unrarefied <- merge(ps_eDNA_Fish_unrarefied, ps_eDNA_Fish_unrarefied_nonpelagic, by.x=0, by.y=0, all=T)
+ps_all_unrarefied <- merge(ps_all_unrarefied, ps_eDNA_Inv_unrarefied, by.x=1, by.y=0, all=T)
+ps_all_unrarefied <- merge(ps_all_unrarefied, ps_morph_Fish_unrarefied, by.x=1, by.y=0, all=T)
+ps_all_unrarefied <- merge(ps_all_unrarefied, ps_morph_Fish_unrarefied_Demersal, by.x=1, by.y=0, all=T)
+ps_all_unrarefied <- merge(ps_all_unrarefied, ps_morph_Inv_unrarefied, by.x=1, by.y=0, all=T)
+rownames(ps_all_unrarefied) <- ps_all_unrarefied$Row.names
+ps_all_unrarefied$Row.names <- NULL
+ps_all_unrarefied[is.na(ps_all_unrarefied)] <- 0
+Taxonomy_all_unrarefied <- as.matrix(rownames(ps_all_unrarefied))
+rownames(Taxonomy_all_unrarefied) <- rownames(ps_all_unrarefied)
+
+ps_all_unrarefied_phylo <- phyloseq(otu_table(ps_all_unrarefied , taxa_are_rows = TRUE), 
+                                    sample_data(smpl_all_unrarefied),tax_table(Taxonomy_all_unrarefied))
+#p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
+p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measures=c("Observed")) + 
+  geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
+  scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  facet_grid(variable~Organism, scales = "free")
+p_all_unrarefied_box$layers <- p_all_unrarefied_box$layers[-1]
+p_all_unrarefied_box$data$Zone <- factor(p_all_unrarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_unrarefied_box
+
+p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measures=c("Observed")) + 
+  #geom_point(aes(color=Method), size = 3) + 
+  geom_smooth(method=NULL, aes(color=Method, fill=Method, as.numeric(Zone), value)) +
+  scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  facet_grid(variable~Organism, scales = "free")
+p_all_unrarefied_box$layers <- p_all_unrarefied_box$layers[-1]
+p_all_unrarefied_box$data$Zone <- factor(p_all_unrarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_unrarefied_box
+
+p_all_unrarefied_line <- estimate_richness(ps_all_unrarefied_phylo, measures="Observed", split = T)
+p_all_unrarefied_line <- cbind(p_all_unrarefied_line, ps_all_unrarefied_phylo@sam_data)
+p_all_unrarefied_line_plot <- p_all_unrarefied_line %>%
+  group_by(Organism, Method, Zone) %>% 
+  summarise_at(vars("Observed"), c(mean = mean, sd = sd, se = std.error))
+p_all_unrarefied_line_plot$lower <- p_all_unrarefied_line_plot$mean - p_all_unrarefied_line_plot$sd
+p_all_unrarefied_line_plot$upper <- p_all_unrarefied_line_plot$mean + p_all_unrarefied_line_plot$sd
+p_all_unrarefied_line_plot$lowerse <- p_all_unrarefied_line_plot$mean - p_all_unrarefied_line_plot$se
+p_all_unrarefied_line_plot$upperse <- p_all_unrarefied_line_plot$mean + p_all_unrarefied_line_plot$se
+
+p_all_unrarefied_line2 <- ggplot(p_all_unrarefied_line_plot, aes(x=Zone, y=mean, group = Method)) + 
+  geom_point(aes(color=Method), size = 3) + 
+  #geom_errorbar(aes(color=Method, ymin = lower, ymax = upper), width = 0.2, size = 0.5) +
+  geom_errorbar(aes(color=Method, ymin = lowerse, ymax = upperse), width = 0.2, size = 0.5) +
+  geom_line(linetype = "longdash", aes(color=Method), size = 1)+
+  scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme_bw()+
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  labs(y = "Richness")+
+  facet_grid(~Organism, scales = "free")
+p_all_unrarefied_line2$data$Zone <- factor(p_all_unrarefied_line2$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_unrarefied_line2
 
 ##Save Data
 SaveData_eDNA_rarefied <- list(ps_micorDecon_rarefied_Fish = ps_eDNA_Fish_rarefied,
@@ -358,6 +555,12 @@ SaveData_eDNA_rarefied <- list(ps_micorDecon_rarefied_Fish = ps_eDNA_Fish_rarefi
                                smpl_micorDecon_rarefied_Inv = smpl_eDNA_Inv_rarefied)
 saveRDS(SaveData_eDNA_rarefied, paste0(proj.path.12S,
                                        "/MiFish_UE-S_concatenated/results_microDecon/R_Environment/microDecon_rarefied.rds"))
+SaveData_eDNA_unrarefied <- list(ps_micorDecon_unrarefied_Fish = ps_eDNA_Fish_unrarefied,
+                                 ps_micorDecon_unrarefied_Inv = ps_eDNA_Inv_unrarefied,
+                                 smpl_micorDecon_unrarefied_Fish = smpl_eDNA_12S,
+                                 smpl_micorDecon_unrarefied_Inv = smpl_eDNA_COI)
+saveRDS(SaveData_eDNA_unrarefied, paste0(proj.path.12S,
+                                       "/MiFish_UE-S_concatenated/results_microDecon/R_Environment/microDecon_unrarefied.rds"))
 SaveData_morph_unrarefied <- list(ps_morph_unrarefied_Fish = ps_morph_Fish,
                                   ps_morph_unrarefied_Inv = ps_morph_Inv,
                                   smpl_morph_unrarefied_Fish = smpl_morph_Fish_raw,
@@ -377,245 +580,215 @@ saveRDS(SaveData_morph_rarefied, paste0(proj.path.12S,
 library(car)
 library(DescTools)
 library(lsr)
-DNA_species <- smpl_all
-DNA_species$NumOfSp <- colSums(ps_all>0)
-DNA_species_Fish <- DNA_species[which(DNA_species$Organism == "Fish"),]
-DNA_species_Demersal <- DNA_species_Fish[which(DNA_species_Fish$Method %in% c("eDNA_Demersal", "Morphology_Demersal")),]
-DNA_species_AllFish <- DNA_species_Fish[which(DNA_species_Fish$Method %in% c("eDNA_All", "Morphology_All")),]
-NumOfSp_AllFish <- as.data.frame(cbind(DNA_species_AllFish$NumOfSp,
-                                       DNA_species_AllFish$Zone,
-                                       DNA_species_AllFish$Method))
-NumOfSp_Demersal <- as.data.frame(cbind(DNA_species_Demersal$NumOfSp,
-                                       DNA_species_Demersal$Zone,
-                                       DNA_species_Demersal$Method))
+DNA_species_rarefied <- smpl_all_rarefied
+DNA_species_rarefied$NumOfSp <- colSums(ps_all_rarefied>0)
+DNA_species_rarefied_Fish <- DNA_species_rarefied[which(DNA_species_rarefied$Organism == "Fish"),]
+DNA_species_rarefied_Demersal <- DNA_species_rarefied_Fish[which(DNA_species_rarefied_Fish$Method 
+                                                                 %in% c("eDNA_Demersal", "Morphology_Demersal")),]
+DNA_species_rarefied_AllFish <- DNA_species_rarefied_Fish[which(DNA_species_rarefied_Fish$Method 
+                                                                %in% c("eDNA_All", "Morphology_All")),]
+NumOfSp_rarefied_AllFish <- as.data.frame(cbind(DNA_species_rarefied_AllFish$NumOfSp,
+                                       DNA_species_rarefied_AllFish$Zone,
+                                       DNA_species_rarefied_AllFish$Method))
+NumOfSp_rarefied_Demersal <- as.data.frame(cbind(DNA_species_rarefied_Demersal$NumOfSp,
+                                       DNA_species_rarefied_Demersal$Zone,
+                                       DNA_species_rarefied_Demersal$Method))
+
+DNA_species_unrarefied <- smpl_all_unrarefied
+DNA_species_unrarefied$NumOfSp <- colSums(ps_all_unrarefied>0)
+DNA_species_unrarefied_Fish <- DNA_species_unrarefied[which(DNA_species_unrarefied$Organism == "Fish"),]
+DNA_species_unrarefied_Demersal <- DNA_species_unrarefied_Fish[which(DNA_species_unrarefied_Fish$Method 
+                                                                 %in% c("eDNA_Demersal", "Morphology_Demersal")),]
+DNA_species_unrarefied_AllFish <- DNA_species_unrarefied_Fish[which(DNA_species_unrarefied_Fish$Method 
+                                                                %in% c("eDNA_All", "Morphology_All")),]
+NumOfSp_unrarefied_AllFish <- as.data.frame(cbind(DNA_species_unrarefied_AllFish$NumOfSp,
+                                                  DNA_species_unrarefied_AllFish$Zone,
+                                                  DNA_species_unrarefied_AllFish$Method))
+NumOfSp_unrarefied_Demersal <- as.data.frame(cbind(DNA_species_unrarefied_Demersal$NumOfSp,
+                                                   DNA_species_unrarefied_Demersal$Zone,
+                                                   DNA_species_unrarefied_Demersal$Method))
 
 #model_DNA <- lm(NumOfSp ~ Zone, data=DNA_species, family=poisson)
-#model_DNA_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_species_AllFish, family=poisson)
-#model_DNA_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_species_Demersal, family=poisson)
+model_DNA_rarefied_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_AllFish, family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "eDNA_All"),], family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "Morphology_All"),], family=poisson)
+model_DNA_rarefied_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Demersal, family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),], family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),], family=poisson)
 
-model_DNA_AllFish <- lm(NumOfSp ~ Zone*Method, data=DNA_species_AllFish)
-model_DNA_Demersal <- lm(NumOfSp ~ Zone*Method, data=DNA_species_Demersal) 
+summary(model_DNA_rarefied_AllFish)
+summary(model_DNA_rarefied_Demersal)
+summary(model_DNA_rarefied_AllFish_Z)
+summary(model_DNA_rarefied_Demersal_Z)
 
-anova_DNA_AllFish <- Anova(model_DNA_AllFish, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA_AllFish)
-anova_DNA_AllFish
-anova_DNA_Demersal <- Anova(model_DNA_Demersal, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA_Demersal)
-anova_DNA_Demersal
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_AllFish), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_Demersal), method = "hsd")
+anova_DNA_rarefied_AllFish <- Anova(model_DNA_rarefied_AllFish, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_AllFish
+anova_DNA_rarefied_Demersal <- Anova(model_DNA_rarefied_Demersal, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Demersal
+anova_DNA_rarefied_AllFish_Z <- Anova(model_DNA_rarefied_AllFish_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_AllFish_Z
+anova_DNA_rarefied_Demersal_Z <- Anova(model_DNA_rarefied_Demersal_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Demersal_Z
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_AllFish), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "eDNA_All"),]), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "Morphology_All"),]), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Demersal), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),]), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),]), method = "hsd")
 
-es <- etaSquared(model_DNA_AllFish, type=2, anova=TRUE)
+model_DNA_unrarefied_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_AllFish, family=poisson)
+model_DNA_unrarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_AllFish, family=poisson)
+model_DNA_unrarefied_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Demersal, family=poisson)
+model_DNA_unrarefied_Demersal_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_AllFish, family=poisson)
+
+summary(model_DNA_unrarefied_AllFish)
+summary(model_DNA_unrarefied_Demersal)
+summary(model_DNA_unrarefied_AllFish_Z)
+summary(model_DNA_unrarefied_Demersal_Z)
+
+anova_DNA_unrarefied_AllFish <- Anova(model_DNA_unrarefied_AllFish, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_AllFish
+anova_DNA_unrarefied_Demersal <- Anova(model_DNA_unrarefied_Demersal, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Demersal
+anova_DNA_unrarefied_AllFish_Z <- Anova(model_DNA_unrarefied_AllFish_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_AllFish_Z
+anova_DNA_unrarefied_Demersal_Z <- Anova(model_DNA_unrarefied_Demersal_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Demersal_Z
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_AllFish), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_unrarefied_Demersal), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Demersal), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_unrarefied_Demersal), method = "hsd")
+
+es <- etaSquared(model_DNA_rarefied_AllFish, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 0.95539
-
-es <- etaSquared(model_DNA_Demersal, type=2, anova=TRUE)
+sum(es[,"eta.sq"]) # 0.9554
+es <- etaSquared(model_DNA_rarefied_Demersal, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 0.872
+sum(es[,"eta.sq"]) # 0.8728
+
+es <- etaSquared(model_DNA_unrarefied_AllFish, type=2, anova=TRUE)
+es
+sum(es[,"eta.sq"]) # 0.9523
+es <- etaSquared(model_DNA_unrarefied_Demersal, type=2, anova=TRUE)
+es
+sum(es[,"eta.sq"]) # 0.8972
 
 library(lsmeans)
 library(multcomp)
-cld(lsmeans(model_DNA_AllFish, ~ Zone*Method), Letters=letters)
-cld(lsmeans(model_DNA_Demersal, ~ Zone*Method), Letters=letters)
-#elk station in ander groep!
-#lstrends(model_DNA, "Station", var="NR") #lstrends: moet continue zijn + volgorde belangrijk => DUS HIER NIET GEBRUIKEN
-#DNA_species_2$NR <- as.numeric(as.factor(DNA_species_2$Biologic_replicate))
+cld(lsmeans(model_DNA_unrarefied_AllFish, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_DNA_unrarefied_Demersal, ~ Zone*Method), Letters=letters)
 
 #check assumptions
 #homogeneity
-plot(model_DNA_AllFish, 1)
-plot(model_DNA_Demersal, 1)
+plot(model_DNA_unrarefied_AllFish, 1)
+plot(model_DNA_unrarefied_Demersal, 1)
 #leveneTest(NumOfSp ~ Station, data=DNA_species) # SIGNIFICANT (but only on edges)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_AllFish)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_Demersal)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_AllFish)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Demersal)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_AllFish)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Demersal)
 
 #normality
-resid_all <- residuals(model_DNA_AllFish)  # pull the residuals
-hist(resid_all)
-qqnorm(resid_all) 
-resid_demersal <- residuals(model_DNA_Demersal)  # pull the residuals
-hist(resid_demersal)
-qqnorm(resid_demersal) 
-plot(model_DNA_AllFish, 2)
-plot(model_DNA_Demersal, 2)
-ggqqplot(DNA_species$NumOfSp)
-shapiro.test(resid_all)
-shapiro.test(resid_demersal)
+resid_all_rarefied <- residuals(model_DNA_rarefied_AllFish)  # pull the residuals
+hist(resid_all_rarefied)
+qqnorm(resid_all_rarefied) 
+plot(model_DNA_rarefied_AllFish, 2)
+shapiro.test(resid_all_rarefied)
 
-library(MASS)
-boxcox(model_DNA_AllFish)
-bc<-boxcox(model_DNA_AllFish)
-bc$x[which(bc$y==max(bc$y))] #0.95539
+resid_rarefied_demersal <- residuals(model_DNA_rarefied_Demersal)  # pull the residuals
+hist(resid_rarefied_demersal)
+qqnorm(resid_rarefied_demersal) 
+plot(model_DNA_rarefied_Demersal, 2)
+shapiro.test(resid_rarefied_demersal)
 
-boxcox(model_DNA_Demersal)
-bc<-boxcox(model_DNA_Demersal)
-bc$x[which(bc$y==max(bc$y))] #0.9971722
+ggqqplot(DNA_species_rarefied$NumOfSp)
 
-#Shannon diversity
-DNA_Shannon <- smpl_all
-DNA_Shannon$NumOfSp <- (diversity(t(ps_all), "shannon"))
-DNA_Shannon_Fish <- DNA_Shannon[which(DNA_Shannon$Organism == "Fish"),]
-DNA_Shannon_Demersal <- DNA_Shannon_Fish[which(DNA_Shannon_Fish$Method %in% c("eDNA_Demersal", "Morphology_Demersal")),]
-DNA_Shannon_AllFish <- DNA_Shannon_Fish[which(DNA_Shannon_Fish$Method %in% c("eDNA_All", "Morphology_All")),]
-NumOfSp_AllFish <- as.data.frame(cbind(DNA_Shannon_AllFish$NumOfSp,
-                                       DNA_Shannon_AllFish$Zone,
-                                       DNA_Shannon_AllFish$Method))
-NumOfSp_Demersal <- as.data.frame(cbind(DNA_Shannon_Demersal$NumOfSp,
-                                        DNA_Shannon_Demersal$Zone,
-                                        DNA_Shannon_Demersal$Method))
+resid_all_unrarefied <- residuals(model_DNA_unrarefied_AllFish)  # pull the residuals
+hist(resid_all_unrarefied)
+qqnorm(resid_all_unrarefied) 
+plot(model_DNA_unrarefied_AllFish, 2)
+shapiro.test(resid_all_unrarefied)
 
-#model_Shannon_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish, family=poisson)
-#model_Shannon_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal, family=poisson) 
+resid_unrarefied_demersal <- residuals(model_DNA_unrarefied_Demersal)  # pull the residuals
+hist(resid_unrarefied_demersal)
+qqnorm(resid_unrarefied_demersal) 
+plot(model_DNA_unrarefied_Demersal, 2)
+shapiro.test(resid_unrarefied_demersal)
 
-model_Shannon_AllFish <- lm(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish)
-model_Shannon_Demersal <- lm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal) 
-
-anova_Shannon_AllFish <- Anova(model_Shannon_AllFish, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon_AllFish)
-anova_Shannon_AllFish
-anova_Shannon_Demersal <- Anova(model_Shannon_Demersal, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon_Demersal)
-anova_Shannon_Demersal
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal), method = "hsd")
-
-es <- etaSquared(model_Shannon_AllFish, type=2, anova=TRUE)
-es
-sum(es[,"eta.sq"]) # 0.9606682
-
-es <- etaSquared(model_Shannon_Demersal, type=2, anova=TRUE)
-es
-sum(es[,"eta.sq"]) # 1.000595
-
-cld(lsmeans(model_Shannon_AllFish, ~ Zone*Method), Letters=letters)
-cld(lsmeans(model_Shannon_Demersal, ~ Zone*Method), Letters=letters)
-
-#check assumptions
-#homogeneity
-plot(model_Shannon_AllFish, 1)
-plot(model_Shannon_Demersal, 1)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_Shannon_AllFish)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_Shannon_Demersal)
-
-#normality
-resid_all <- residuals(model_Shannon_AllFish)  # pull the residuals
-hist(resid_all)
-qqnorm(resid_all) 
-resid_demersal <- residuals(model_Shannon_Demersal)  # pull the residuals
-hist(resid_demersal)
-qqnorm(resid_demersal) 
-plot(model_Shannon_AllFish, 2)
-plot(model_Shannon_Demersal, 2)
-ggqqplot(DNA_species$NumOfSp)
-shapiro.test(resid_all)
-shapiro.test(resid_demersal)
+ggqqplot(DNA_species_unrarefied$NumOfSp)
 
 ##Statistical analysis - Invertebrates
 #Alpha diversity
-DNA_species_Inv <- DNA_species[which(DNA_species$Organism == "Invertebrates"),]
+DNA_species_rarefied_Inv <- DNA_species_rarefied[which(DNA_species_rarefied$Organism == "Invertebrates"),]
+DNA_species_unrarefied_Inv <- DNA_species_unrarefied[which(DNA_species_unrarefied$Organism == "Invertebrates"),]
 
-model_DNA_Inv <- lm(NumOfSp ~ Zone*Method, data=DNA_species_Inv) 
-model_DNA2_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_species_Inv, family = poisson) 
-anova_DNA_Inv <- Anova(model_DNA_Inv, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA_Inv)
-anova_DNA_Inv
-anova_DNA2_Inv <- Anova(model_DNA2_Inv, type=2)# SIGN for station , not sign for biological replicates
-summary(model_DNA2_Inv)
-anova_DNA2_Inv
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_Inv), method = "hsd")
+model_DNA_rarefied_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv, family = poisson)
+model_DNA_rarefied_Inv_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_Inv, family = poisson)
 
-es <- etaSquared(model_DNA_Inv, type=2, anova=TRUE)
+summary(model_DNA_rarefied_Inv)
+summary(model_DNA_rarefied_Inv_Z)
+
+anova_DNA_rarefied_Inv <- Anova(model_DNA_rarefied_Inv, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Inv
+anova_DNA_rarefied_Inv_Z <- Anova(model_DNA_rarefied_Inv_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Inv_Z
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv_Z), method = "hsd")
+
+model_DNA_unrarefied_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv, family = poisson)
+model_DNA_unrarefied_Inv_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_Inv, family = poisson)
+
+summary(model_DNA_unrarefied_Inv)
+summary(model_DNA_unrarefied_Inv_Z)
+
+anova_DNA_unrarefied_Inv <- Anova(model_DNA_unrarefied_Inv, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Inv
+anova_DNA_unrarefied_Inv_Z <- Anova(model_DNA_unrarefied_Inv_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Inv_Z
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv_Z), method = "hsd")
+
+es <- etaSquared(model_DNA_rarefied_Inv, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 1.000002
+sum(es[,"eta.sq"]) # 0.8668
 
-es <- etaSquared(model_DNA2_Inv, type=2, anova=TRUE)
+es <- etaSquared(model_DNA_unrarefied_Inv, type=2, anova=TRUE)
 es
-sum(es[,"eta.sq"]) # 0.8668192
+sum(es[,"eta.sq"]) # 0.9467
 
-cld(lsmeans(model_DNA_Inv, ~ Zone*Method), Letters=letters)
-cld(lsmeans(model_DNA2_Inv, ~ Zone*Method), Letters=letters)
-
-#elk station in ander groep!
-#lstrends(model_DNA, "Station", var="NR") #lstrends: moet continue zijn + volgorde belangrijk => DUS HIER NIET GEBRUIKEN
-#DNA_species_2$NR <- as.numeric(as.factor(DNA_species_2$Biologic_replicate))
+cld(lsmeans(model_DNA_rarefied_Inv, ~ Zone*Method), Letters=letters)
+cld(lsmeans(model_DNA_unrarefied_Inv, ~ Zone*Method), Letters=letters)
 
 #check assumptions
 #homogeneity
-plot(model_DNA_Inv, 1)
-plot(model_DNA2_Inv, 1)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_Inv)
+plot(model_DNA_rarefied_Inv, 1)
+plot(model_DNA_unrarefied_Inv, 1)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv)
+leveneTest(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv)
 
 #normality
-resid <- residuals(model_DNA_Inv)  # pull the residuals
-resid2 <- residuals(model_DNA2_Inv)  # pull the residuals
-hist(resid)
-hist(resid2)
-qqnorm(resid)
-qqnorm(resid2) 
-plot(model_DNA_Inv, 2)
-plot(model_DNA2_Inv, 2)
-ggqqplot(DNA_species_Inv$NumOfSp)
-shapiro.test(resid)
-shapiro.test(resid2)
+resid_rarefied <- residuals(model_DNA_rarefied_Inv)  # pull the residuals
+hist(resid_rarefied)
+qqnorm(resid_rarefied)
+plot(model_DNA_rarefied_Inv, 2)
+shapiro.test(resid_rarefied)
 
-boxcox(model_DNA_Inv)
-bc<-boxcox(model_DNA_Inv)
-bc$x[which(bc$y==max(bc$y))] #0.6666667
+resid_unrarefied <- residuals(model_DNA_unrarefied_Inv)  # pull the residuals
+hist(resid_unrarefied)
+qqnorm(resid_unrarefied)
+plot(model_DNA_unrarefied_Inv, 2)
+shapiro.test(resid_unrarefied)
 
-boxcox(model_DNA2_Inv)
-bc<-boxcox(model_DNA2_Inv)
-bc$x[which(bc$y==max(bc$y))] #0.6666667
-
-#Shannon diversity
-DNA_Shannon_Inv <- DNA_Shannon[which(DNA_Shannon$Organism == "Invertebrates"),]
-
-model_Shannon_Inv <- lm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Inv)
-model_Shannon2_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_Shannon_Inv, family = poisson)
-anova_Shannon_Inv <- Anova(model_Shannon_Inv, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon_Inv)
-anova_Shannon_Inv
-anova_Shannon2_Inv <- Anova(model_Shannon2_Inv, type=2)# SIGN for station , not sign for biological replicates
-summary(model_Shannon2_Inv)
-anova_Shannon2_Inv
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_Shannon_Inv), method = "hsd")
-
-es <- etaSquared(model_Shannon_Inv, type=2, anova=TRUE)
-es
-sum(es[,"eta.sq"]) #1.00072 
-
-es <- etaSquared(model_Shannon2_Inv, type=2, anova=TRUE)
-es
-sum(es[,"eta.sq"]) #0.7441658
-
-cld(lsmeans(model_Shannon_Inv, ~ Zone*Method), Letters=letters)
-cld(lsmeans(model_Shannon2_Inv, ~ Zone*Method), Letters=letters)
-
-#check assumptions
-#homogeneity
-plot(model_Shannon_Inv, 1)
-plot(model_Shannon2_Inv, 1)
-leveneTest(NumOfSp ~ Zone*Method, data=DNA_Shannon_Inv)
-
-#normality
-resid_Shannon_Inv <- residuals(model_Shannon_Inv)  # pull the residuals
-resid_Shannon2_Inv <- residuals(model_Shannon2_Inv)  # pull the residuals
-hist(resid_Shannon_Inv)
-hist(resid_Shannon2_Inv)
-qqnorm(resid_Shannon_Inv) 
-qqnorm(resid_Shannon2_Inv) 
-plot(model_Shannon_Inv, 2)
-plot(model_Shannon2_Inv, 2)
-ggqqplot(DNA_Shannon$Shannon)
-shapiro.test(resid_Shannon_Inv)
-shapiro.test(resid_Shannon2_Inv)
-
-boxcox(model_Shannon_Inv)
-bc<-boxcox(model_Shannon_Inv)
-bc$x[which(bc$y==max(bc$y))]
-
-boxcox(model_Shannon2_Inv)
-bc<-boxcox(model_Shannon2_Inv)
-bc$x[which(bc$y==max(bc$y))]
+ggqqplot(DNA_species_rarefied_Inv$NumOfSp)
+ggqqplot(DNA_species_unrarefied_Inv$NumOfSp)
 
 ## Calculate relative read abundances assigned
 Select_Transition <- c(smpl_eDNA_Inv$Niskin.sample[which(smpl_eDNA_Inv$Zone == "Transition")])
