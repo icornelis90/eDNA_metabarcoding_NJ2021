@@ -404,17 +404,19 @@ p_all_rarefied_box
 p_all_rarefied_line <- estimate_richness(ps_all_rarefied_phylo, measures="Observed", split = T)
 p_all_rarefied_line <- cbind(p_all_rarefied_line, ps_all_rarefied_phylo@sam_data)
 p_all_rarefied_line_plot <- p_all_rarefied_line %>%
-  group_by(Organism, Method, Zone) %>% 
-  summarise_at(vars("Observed"), c(mean = mean, sd = sd, se = std.error))
-p_all_rarefied_line_plot$lower <- p_all_rarefied_line_plot$mean - p_all_rarefied_line_plot$sd
-p_all_rarefied_line_plot$upper <- p_all_rarefied_line_plot$mean + p_all_rarefied_line_plot$sd
-p_all_rarefied_line_plot$lowerse <- p_all_rarefied_line_plot$mean - p_all_rarefied_line_plot$se
-p_all_rarefied_line_plot$upperse <- p_all_rarefied_line_plot$mean + p_all_rarefied_line_plot$se
+  group_by(Organism, Method, Zone) %>%
+  summarise(
+    n=n(),
+    mean=mean(Observed),
+    sd=sd(Observed)) %>%
+  mutate(se=sd/sqrt(n))  %>%
+  mutate(ci=se * qt((1-0.05)/2 + .5, n-1))
 
 p_all_rarefied_line2 <- ggplot(p_all_rarefied_line_plot, aes(x=Zone, y=mean, group = Method)) + 
   geom_point(aes(color=Method), size = 3) + 
-  #geom_errorbar(aes(color=Method, ymin = lower, ymax = upper), width = 0.2, size = 0.5) +
-  geom_errorbar(aes(color=Method, ymin = lowerse, ymax = upperse), width = 0.2, size = 0.5) +
+  #geom_errorbar(aes(color=Method, ymin = mean + sd, ymax = mean - sd), width = 0.2, size = 0.5) +
+  #geom_errorbar(aes(color=Method, ymin = mean + se, ymax = mean - se), width = 0.2, size = 0.5) +
+  geom_errorbar(aes(color=Method, ymin = mean + ci, ymax = mean - ci), width = 0.2, size = 0.5) +
   geom_line(linetype = "longdash", aes(color=Method), size = 1)+
   scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
@@ -527,17 +529,19 @@ p_all_unrarefied_box
 p_all_unrarefied_line <- estimate_richness(ps_all_unrarefied_phylo, measures="Observed", split = T)
 p_all_unrarefied_line <- cbind(p_all_unrarefied_line, ps_all_unrarefied_phylo@sam_data)
 p_all_unrarefied_line_plot <- p_all_unrarefied_line %>%
-  group_by(Organism, Method, Zone) %>% 
-  summarise_at(vars("Observed"), c(mean = mean, sd = sd, se = std.error))
-p_all_unrarefied_line_plot$lower <- p_all_unrarefied_line_plot$mean - p_all_unrarefied_line_plot$sd
-p_all_unrarefied_line_plot$upper <- p_all_unrarefied_line_plot$mean + p_all_unrarefied_line_plot$sd
-p_all_unrarefied_line_plot$lowerse <- p_all_unrarefied_line_plot$mean - p_all_unrarefied_line_plot$se
-p_all_unrarefied_line_plot$upperse <- p_all_unrarefied_line_plot$mean + p_all_unrarefied_line_plot$se
+  group_by(Organism, Method, Zone) %>%
+  summarise(
+    n=n(),
+    mean=mean(Observed),
+    sd=sd(Observed)) %>%
+  mutate(se=sd/sqrt(n))  %>%
+  mutate(ci=se * qt((1-0.05)/2 + .5, n-1))
 
 p_all_unrarefied_line2 <- ggplot(p_all_unrarefied_line_plot, aes(x=Zone, y=mean, group = Method)) + 
   geom_point(aes(color=Method), size = 3) + 
-  #geom_errorbar(aes(color=Method, ymin = lower, ymax = upper), width = 0.2, size = 0.5) +
-  geom_errorbar(aes(color=Method, ymin = lowerse, ymax = upperse), width = 0.2, size = 0.5) +
+  geom_errorbar(aes(color=Method, ymin = mean + sd, ymax = mean - sd), width = 0.2, size = 0.5) +
+  #geom_errorbar(aes(color=Method, ymin = mean + se, ymax = mean - se), width = 0.2, size = 0.5) +
+  #geom_errorbar(aes(color=Method, ymin = mean + ci, ymax = mean - ci), width = 0.2, size = 0.5) +
   geom_line(linetype = "longdash", aes(color=Method), size = 1)+
   scale_color_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
