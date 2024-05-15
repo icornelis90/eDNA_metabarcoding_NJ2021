@@ -2,6 +2,8 @@
 #author: "Isolde Cornelis"
 #date: "16/11/2023"
 
+################################################################################
+
 ##Stacked Barplot, x = Negative Control Samples, y = number of reads (unrarefied data), fill = human, Fish or others
 #load data
 proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-UE_run2")
