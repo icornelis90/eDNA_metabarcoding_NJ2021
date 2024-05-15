@@ -1,3 +1,9 @@
+#title: "Run DADA2 on demultiplexed MiSeq sequencing data"
+#author: "Isolde Cornelis"
+#date: "01/09/2022"
+
+################################################################################
+
 #set OS type for paths
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{
   home<-"//192.168.236.131/"}

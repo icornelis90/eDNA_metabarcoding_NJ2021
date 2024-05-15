@@ -1,3 +1,9 @@
+#title: "Full taxonomic assignment"
+#author: "Joran Vanhollebeke & Isolde Cornelis"
+#date: "01/02/2024"
+
+################################################################################
+
 # make paths
 proj.path <- here("/home/genomics/icornelis/02_ZEROimpact/02_COI/NJ2021")
 

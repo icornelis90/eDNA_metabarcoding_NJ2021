@@ -1,3 +1,9 @@
+#title: "Heatmap of relative abundance of invertebrate species"
+#author: "Isolde Cornelis"
+#date: "01/02/2024"
+
+################################################################################
+
 #set OS type for paths
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{
   home<-"//192.168.236.131/"}

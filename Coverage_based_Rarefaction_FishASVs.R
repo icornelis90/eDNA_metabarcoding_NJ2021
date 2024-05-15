@@ -1,6 +1,8 @@
-#### Isolde Cornelis
-#### Alpha Diversity for eDNA metabarcoding data using coverage based rarefaction
-#### 02/02/2024
+#title: "Alpha Diversity for eDNA metabarcoding data using coverage based rarefaction"
+#author: "Isolde Cornelis"
+#date: "02/02/2024"
+
+################################################################################
 
 #set OS type for paths
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{

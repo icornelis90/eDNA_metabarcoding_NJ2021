@@ -1,3 +1,9 @@
+#title: "Create nMDS-plots with un-rarefied data (eDNA index)"
+#author: "Isolde Cornelis"
+#date: "29/02/2024"
+
+################################################################################
+
 #!/usr/bin/env Rscript
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{
   home<-"//192.168.236.131/"}

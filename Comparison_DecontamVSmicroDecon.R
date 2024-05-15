@@ -1,8 +1,9 @@
-#### Isolde Cornelis
-#### Compare the Alpha Diversity when using Decontam (non-rarefied) and microDecon
-#### For microDecon we also compare non-rarefied vs coverage_based_rarefaction
-#### 28/02/2024
+-#title: "Compare the Alpha Diversity when using Decontam (un-rarefied) and microDecon"
+#subtitle= "For microDecon we also compare non-rarefied vs coverage_based_rarefaction"
+#author: "Isolde Cornelis"
+#date: "28/02/2024"
 
+################################################################################
 
 
 proj.path.12S <- here("/home/genomics/icornelis/02_ZEROimpact/01_12S/NJ2021/MiFish-UE_run2")

@@ -1,6 +1,6 @@
 #!/bin/bash
 #Written by Joran Vanhollebeke & Isolde Cornelis
-#Date: 
+#Date: 21/09/2022
 
 clear -x
 

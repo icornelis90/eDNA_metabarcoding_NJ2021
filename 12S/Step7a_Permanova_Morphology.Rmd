@@ -1,6 +1,6 @@
 
 title: "Permanova_Geans"
-author: "Laure Van den Bulcke"
+author: "Laure Van den Bulcke & Isolde Cornelis"
 date: "3/25/2020"
 output: html_document
 

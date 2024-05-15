@@ -1,3 +1,9 @@
+#title: "Create nMDS-plots"
+#author: "Isolde Cornelis"
+#date: "01/02/2024"
+
+################################################################################
+
 #!/usr/bin/env Rscript
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{
   home<-"//192.168.236.131/"}

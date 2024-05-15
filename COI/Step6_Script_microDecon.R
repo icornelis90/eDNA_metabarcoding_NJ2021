@@ -1,3 +1,9 @@
+#title: "Decontaminate eDNA metabarcoding data with microDecon"
+#author: "Isolde Cornelis"
+#date: "26/02/2024"
+
+################################################################################
+
 #set OS type for paths
 if(.Platform$OS.type == "unix"){home<-"/home/"} else{
   home<-"//192.168.236.131/"}

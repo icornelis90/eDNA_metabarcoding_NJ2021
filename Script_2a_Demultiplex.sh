@@ -1,4 +1,6 @@
-#!/usr/bin/env sh
+#!/bin/bash
+#Written by Collins et al., 2021 adapted by Isolde Cornelis
+#Date: 21/09/2022
 
 # set params #
 while getopts p:l:f:r:t:m: option

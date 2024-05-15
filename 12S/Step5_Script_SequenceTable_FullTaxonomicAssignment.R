@@ -1,3 +1,9 @@
+#title: "Full taxonomic assignment"
+#author: "Joran Vanhollebeke & Isolde Cornelis"
+#date: "27/02/2024"
+
+################################################################################
+
 #activate libraries
 libraries <- c("here"
                , "taxize"

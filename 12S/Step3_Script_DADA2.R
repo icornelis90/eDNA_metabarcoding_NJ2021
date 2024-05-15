@@ -1,4 +1,4 @@
-#title: "DADA2_ZERO-impact"
+#title: "Run DADA2 on demultiplexed MiSeq sequencing data"
 #author: "Isolde Cornelis"
 #date: "01/09/2022"
 
