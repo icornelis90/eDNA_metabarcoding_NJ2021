@@ -51,10 +51,10 @@ The script will provide a heatmap representing the relative read abundance of ea
 The input files are the decontaminated ASV-table with full taxonomic assignment, the data from the morphological identification and the files containing the metadata of each sample.\
 The Alpha diversity analysis is performed on the un-rarefied and rarefied data. The coverage based rarefaction is performed within the same script.\
 The script will provide the plots, a box-plot and line-plot, with the alpha diversity analysis. In addition the statistical analysis using a generalized linear model is performed. 
-- Step7d - Permanova analysis
+- Step7d - Permanova analysis\
 The input files are the decontaminated ASV-table with full taxonomic assignment, or the data from the morphological identification, and the file containing the metadata of each sample.\
 The permanova analysis is performed in the un-rarefied data after double transformation. 
-- Step7e - Species community structures (nMDS)
+- Step7e - Species community structures (nMDS)\
 The input files are the decontaminated ASV-table with full taxonomic assignment, the data from the morphological identification, and the file containing the metadata of each sample.\
 The beta-diversity is analysed based on the un-rarefied data after double transformation.
 
