@@ -2,7 +2,7 @@
 ### Description
 These scripts were used for the data anlysis of the seawater samples collected in autumn 2021. 
 Amplification was performed with a one-step PCR-protocol using uniquely tagged primersets for each sample. Sequencing was done on a MiSeq illumina platform.
-Detailed information about the scripts and how to use them can be found in the document **eDNAmetabarcoding_DataAnalysis_Workflow_MiSeq.docx**.\
+Detailed information about the scripts and how to use them can be found in the document **eDNAmetabarcoding_DataAnalysis_Workflow_MiSeq.pdf**.\
 The first steps in the processing include the quality control using FastQC,and the preparation of the datasets for demultiplexing.\
 All samples were used for 12S and COI eDNA metabarcoding, all scripts used specifically for either of the two barcodes are stored seperatly in the 12S and COI folders, respectively. 
 
@@ -51,10 +51,10 @@ The script will provide a heatmap representing the relative read abundance of ea
 The input files are the decontaminated ASV-table with full taxonomic assignment, the data from the morphological identification and the files containing the metadata of each sample.\
 The Alpha diversity analysis is performed on the un-rarefied and rarefied data. The coverage based rarefaction is performed within the same script.\
 The script will provide the plots, a box-plot and line-plot, with the alpha diversity analysis. In addition the statistical analysis using a generalized linear model is performed. 
-- Step7d - Permanova analysis
+- Step7d - Permanova analysis\
 The input files are the decontaminated ASV-table with full taxonomic assignment, or the data from the morphological identification, and the file containing the metadata of each sample.\
 The permanova analysis is performed in the un-rarefied data after double transformation. 
-- Step7e - Species community structures (nMDS)
+- Step7e - Species community structures (nMDS)\
 The input files are the decontaminated ASV-table with full taxonomic assignment, the data from the morphological identification, and the file containing the metadata of each sample.\
 The beta-diversity is analysed based on the un-rarefied data after double transformation.
 
