@@ -2,7 +2,7 @@
 ### Description
 These scripts were used for the data anlysis of the seawater samples collected in autumn 2021. 
 Amplification was performed with a one-step PCR-protocol using uniquely tagged primersets for each sample. Sequencing was done on a MiSeq illumina platform.
-Detailed information about the scripts and how to use them can be found in the document **eDNAmetabarcoding_DataAnalysis_Workflow_MiSeq.docx**.\
+Detailed information about the scripts and how to use them can be found in the document **eDNAmetabarcoding_DataAnalysis_Workflow_MiSeq.pdf**.\
 The first steps in the processing include the quality control using FastQC,and the preparation of the datasets for demultiplexing.\
 All samples were used for 12S and COI eDNA metabarcoding, all scripts used specifically for either of the two barcodes are stored seperatly in the 12S and COI folders, respectively. 
 
