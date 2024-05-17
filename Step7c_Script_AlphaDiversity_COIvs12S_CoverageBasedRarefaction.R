@@ -246,12 +246,6 @@ ps_morph_rarefied_Fish <- phyloseq_coverage_raref(physeq = ps_morph_Fish_phylo,
                                                   iter = 1, coverage = 0.94, drop_lowcoverage = T)
 table_morph_rarefied_Fish <- as.data.frame(ps_morph_rarefied_Fish@.Data)
 
-plot_Fish_morph_rarefied <- plot_richness(ps_morph_rarefied_Fish, x="Zone",
-                                    measures=c("Observed", "Shannon"),
-                                    color="Zone") + 
-  geom_boxplot(outlier.shape = NA)
-plot_Fish_morph_rarefied 
-
 ##Select demersal fish species from the morphological data
 table_morph_unrarefied_Demersal <- ps_morph_Fish[rownames(ps_morph_Fish) %in% demersal_fish,]
 table_morph_unrarefied_Demersal <- table_morph_unrarefied_Demersal[,!colSums(table_morph_unrarefied_Demersal) == 0]
@@ -615,63 +609,117 @@ NumOfSp_unrarefied_Demersal <- as.data.frame(cbind(DNA_species_unrarefied_Demers
                                                    DNA_species_unrarefied_Demersal$Method))
 
 #model_DNA <- lm(NumOfSp ~ Zone, data=DNA_species, family=poisson)
-model_DNA_rarefied_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_AllFish, family=poisson)
+model_DNA_rarefied_AllFish <- glm(NumOfSp ~ Zone*Method,
+                                  data=DNA_species_rarefied_AllFish,
+                                  family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
+                                    data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "eDNA_All"),],
+                                    family=poisson)
+model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
+                                    data=DNA_species_rarefied_AllFish
+                                    [which(DNA_species_unrarefied$Method == "Morphology_All"),],
+                                    family=poisson)
+model_DNA_rarefied_Demersal <- glm(NumOfSp ~ Zone*Method,
+                                   data=DNA_species_rarefied_Demersal,
+                                   family=poisson)
 model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "eDNA_All"),], family=poisson)
+                                    [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),],
+                                    family=poisson)
 model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "Morphology_All"),], family=poisson)
-model_DNA_rarefied_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Demersal, family=poisson)
-model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),], family=poisson)
-model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),], family=poisson)
+                                    [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),],
+                                    family=poisson)
 
 summary(model_DNA_rarefied_AllFish)
 summary(model_DNA_rarefied_Demersal)
 summary(model_DNA_rarefied_AllFish_Z)
 summary(model_DNA_rarefied_Demersal_Z)
 
-anova_DNA_rarefied_AllFish <- Anova(model_DNA_rarefied_AllFish, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_AllFish <- Anova(model_DNA_rarefied_AllFish,
+                                    type=2,
+                                    test = "F")
 anova_DNA_rarefied_AllFish
-anova_DNA_rarefied_Demersal <- Anova(model_DNA_rarefied_Demersal, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Demersal <- Anova(model_DNA_rarefied_Demersal,
+                                     type=2,
+                                     test = "F")
 anova_DNA_rarefied_Demersal
-anova_DNA_rarefied_AllFish_Z <- Anova(model_DNA_rarefied_AllFish_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_AllFish_Z <- Anova(model_DNA_rarefied_AllFish_Z,
+                                      type=2,
+                                      test = "F")
 anova_DNA_rarefied_AllFish_Z
-anova_DNA_rarefied_Demersal_Z <- Anova(model_DNA_rarefied_Demersal_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Demersal_Z <- Anova(model_DNA_rarefied_Demersal_Z,
+                                       type=2,
+                                       test = "F")
 anova_DNA_rarefied_Demersal_Z
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_AllFish), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "eDNA_All"),]), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "Morphology_All"),]), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Demersal), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),]), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),]), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_rarefied_AllFish),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "eDNA_All"),]),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "Morphology_All"),]),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_rarefied_Demersal),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),]),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_rarefied_AllFish
+                [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),]),
+            method = "hsd")
 
-model_DNA_unrarefied_AllFish <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_AllFish, family=poisson)
-model_DNA_unrarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_AllFish, family=poisson)
-model_DNA_unrarefied_Demersal <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Demersal, family=poisson)
-model_DNA_unrarefied_Demersal_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_AllFish, family=poisson)
+model_DNA_unrarefied_AllFish <- glm(NumOfSp ~ Zone*Method,
+                                    data=DNA_species_unrarefied_AllFish,
+                                    family=poisson)
+model_DNA_unrarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
+                                      data=DNA_species_unrarefied_AllFish,
+                                      family=poisson)
+model_DNA_unrarefied_Demersal <- glm(NumOfSp ~ Zone*Method,
+                                     data=DNA_species_unrarefied_Demersal,
+                                     family=poisson)
+model_DNA_unrarefied_Demersal_Z <- glm(NumOfSp ~ Zone,
+                                       data=DNA_species_unrarefied_AllFish,
+                                       family=poisson)
 
 summary(model_DNA_unrarefied_AllFish)
 summary(model_DNA_unrarefied_Demersal)
 summary(model_DNA_unrarefied_AllFish_Z)
 summary(model_DNA_unrarefied_Demersal_Z)
 
-anova_DNA_unrarefied_AllFish <- Anova(model_DNA_unrarefied_AllFish, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_AllFish <- Anova(model_DNA_unrarefied_AllFish,
+                                      type=2,
+                                      test = "F")
 anova_DNA_unrarefied_AllFish
-anova_DNA_unrarefied_Demersal <- Anova(model_DNA_unrarefied_Demersal, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Demersal <- Anova(model_DNA_unrarefied_Demersal,
+                                       type=2,
+                                       test = "F")
 anova_DNA_unrarefied_Demersal
-anova_DNA_unrarefied_AllFish_Z <- Anova(model_DNA_unrarefied_AllFish_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_AllFish_Z <- Anova(model_DNA_unrarefied_AllFish_Z,
+                                        type=2,
+                                        test = "F")
 anova_DNA_unrarefied_AllFish_Z
-anova_DNA_unrarefied_Demersal_Z <- Anova(model_DNA_unrarefied_Demersal_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Demersal_Z <- Anova(model_DNA_unrarefied_Demersal_Z,
+                                         type=2,
+                                         test = "F")
 anova_DNA_unrarefied_Demersal_Z
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_AllFish), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_unrarefied_Demersal), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Demersal), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone, data=DNA_species_unrarefied_Demersal), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_unrarefied_AllFish),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_unrarefied_Demersal),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_unrarefied_Demersal),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_unrarefied_Demersal),
+            method = "hsd")
 
 es <- etaSquared(model_DNA_rarefied_AllFish, type=2, anova=TRUE)
 es
@@ -736,31 +784,55 @@ ggqqplot(DNA_species_unrarefied$NumOfSp)
 DNA_species_rarefied_Inv <- DNA_species_rarefied[which(DNA_species_rarefied$Organism == "Invertebrates"),]
 DNA_species_unrarefied_Inv <- DNA_species_unrarefied[which(DNA_species_unrarefied$Organism == "Invertebrates"),]
 
-model_DNA_rarefied_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv, family = poisson)
-model_DNA_rarefied_Inv_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_Inv, family = poisson)
+model_DNA_rarefied_Inv <- glm(NumOfSp ~ Zone*Method,
+                              data=DNA_species_rarefied_Inv,
+                              family = poisson)
+model_DNA_rarefied_Inv_Z <- glm(NumOfSp ~ Zone,
+                                data=DNA_species_rarefied_Inv,
+                                family = poisson)
 
 summary(model_DNA_rarefied_Inv)
 summary(model_DNA_rarefied_Inv_Z)
 
-anova_DNA_rarefied_Inv <- Anova(model_DNA_rarefied_Inv, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Inv <- Anova(model_DNA_rarefied_Inv,
+                                type=2,
+                                test = "F")
 anova_DNA_rarefied_Inv
-anova_DNA_rarefied_Inv_Z <- Anova(model_DNA_rarefied_Inv_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_rarefied_Inv_Z <- Anova(model_DNA_rarefied_Inv_Z,
+                                  type=2,
+                                  test = "F")
 anova_DNA_rarefied_Inv_Z
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_rarefied_Inv_Z), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_rarefied_Inv),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_rarefied_Inv_Z),
+            method = "hsd")
 
-model_DNA_unrarefied_Inv <- glm(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv, family = poisson)
-model_DNA_unrarefied_Inv_Z <- glm(NumOfSp ~ Zone, data=DNA_species_unrarefied_Inv, family = poisson)
+model_DNA_unrarefied_Inv <- glm(NumOfSp ~ Zone*Method,
+                                data=DNA_species_unrarefied_Inv,
+                                family = poisson)
+model_DNA_unrarefied_Inv_Z <- glm(NumOfSp ~ Zone,
+                                  data=DNA_species_unrarefied_Inv,
+                                  family = poisson)
 
 summary(model_DNA_unrarefied_Inv)
 summary(model_DNA_unrarefied_Inv_Z)
 
-anova_DNA_unrarefied_Inv <- Anova(model_DNA_unrarefied_Inv, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Inv <- Anova(model_DNA_unrarefied_Inv,
+                                  type=2,
+                                  test = "F")
 anova_DNA_unrarefied_Inv
-anova_DNA_unrarefied_Inv_Z <- Anova(model_DNA_unrarefied_Inv_Z, type=2)# SIGN for station , not sign for biological replicates
+anova_DNA_unrarefied_Inv_Z <- Anova(model_DNA_unrarefied_Inv_Z,
+                                    type=2,
+                                    test = "F")
 anova_DNA_unrarefied_Inv_Z
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv), method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone*Method, data=DNA_species_unrarefied_Inv_Z), method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_unrarefied_Inv),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Zone*Method,
+                data=DNA_species_unrarefied_Inv_Z),
+            method = "hsd")
 
 es <- etaSquared(model_DNA_rarefied_Inv, type=2, anova=TRUE)
 es
