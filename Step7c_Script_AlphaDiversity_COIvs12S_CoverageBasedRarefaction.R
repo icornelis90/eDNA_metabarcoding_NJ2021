@@ -292,7 +292,7 @@ box_rarefied$Zone <- c(smpl_eDNA_12S$Zone,
 box_plot_rarefied <- ggplot(box_rarefied, 
                             aes(x = Zone, y = SampleCoverage)) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) +
-  scale_fill_manual(values=c("darkolivegreen3", "lightblue3")) +
+  scale_fill_manual(values=c("lightblue3", "palevioletred2")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_wrap(~Organism, scales = "free")
