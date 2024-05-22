@@ -615,27 +615,27 @@ model_DNA_rarefied_AllFish <- glm(NumOfSp ~ Zone*Method,
                                   data=DNA_species_rarefied_AllFish,
                                   family=poisson)
 model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
-                                    data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "eDNA_All"),],
+                                    data=DNA_species_rarefied_AllFish,
                                     family=poisson)
-model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
-                                    data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "Morphology_All"),],
-                                    family=poisson)
+model_DNA_rarefied_AllFish_M <- glm(NumOfSp ~ Method,
+                                    data=DNA_species_rarefied_AllFish,
+                                     family=poisson)
 model_DNA_rarefied_Demersal <- glm(NumOfSp ~ Zone*Method,
                                    data=DNA_species_rarefied_Demersal,
                                    family=poisson)
-model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),],
-                                    family=poisson)
-model_DNA_rarefied_AllFish_Z <- glm(NumOfSp ~ Zone, data=DNA_species_rarefied_AllFish
-                                    [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),],
-                                    family=poisson)
+model_DNA_rarefied_Demersal_Z <- glm(NumOfSp ~ Zone,
+                                     data=DNA_species_rarefied_Demersal,
+                                     family=poisson)
+model_DNA_rarefied_Demersal_M <- glm(NumOfSp ~ Method,
+                                     data=DNA_species_rarefied_Demersal,
+                                     family=poisson)
 
 summary(model_DNA_rarefied_AllFish)
 summary(model_DNA_rarefied_Demersal)
 summary(model_DNA_rarefied_AllFish_Z)
+summary(model_DNA_rarefied_AllFish_M)
 summary(model_DNA_rarefied_Demersal_Z)
+summary(model_DNA_rarefied_Demersal_M)
 
 anova_DNA_rarefied_AllFish <- Anova(model_DNA_rarefied_AllFish,
                                     type=2,
@@ -649,31 +649,36 @@ anova_DNA_rarefied_AllFish_Z <- Anova(model_DNA_rarefied_AllFish_Z,
                                       type=2,
                                       test = "F")
 anova_DNA_rarefied_AllFish_Z
+anova_DNA_rarefied_AllFish_M <- Anova(model_DNA_rarefied_AllFish_M,
+                                      type=2,
+                                      test = "F")
+anova_DNA_rarefied_AllFish_M
 anova_DNA_rarefied_Demersal_Z <- Anova(model_DNA_rarefied_Demersal_Z,
                                        type=2,
                                        test = "F")
 anova_DNA_rarefied_Demersal_Z
+anova_DNA_rarefied_Demersal_M <- Anova(model_DNA_rarefied_Demersal_M,
+                                       type=2,
+                                       test = "F")
+anova_DNA_rarefied_Demersal_M
+
 PostHocTest(aov(NumOfSp ~ Zone*Method,
                 data=DNA_species_rarefied_AllFish),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone,
-                data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "eDNA_All"),]),
+                data=DNA_species_rarefied_AllFish),
             method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone,
-                data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "Morphology_All"),]),
+PostHocTest(aov(NumOfSp ~ Method,
+                data=DNA_species_rarefied_AllFish),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone*Method,
                 data=DNA_species_rarefied_Demersal),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone,
-                data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "eDNA_Demersal"),]),
+                data=DNA_species_rarefied_AllFish),
             method = "hsd")
-PostHocTest(aov(NumOfSp ~ Zone,
-                data=DNA_species_rarefied_AllFish
-                [which(DNA_species_unrarefied$Method == "Morphology_Demersal"),]),
+PostHocTest(aov(NumOfSp ~ Method,
+                data=DNA_species_rarefied_AllFish),
             method = "hsd")
 
 model_DNA_unrarefied_AllFish <- glm(NumOfSp ~ Zone*Method,
@@ -682,17 +687,25 @@ model_DNA_unrarefied_AllFish <- glm(NumOfSp ~ Zone*Method,
 model_DNA_unrarefied_AllFish_Z <- glm(NumOfSp ~ Zone,
                                       data=DNA_species_unrarefied_AllFish,
                                       family=poisson)
+model_DNA_unrarefied_AllFish_M <- glm(NumOfSp ~ Method,
+                                      data=DNA_species_unrarefied_AllFish,
+                                      family=poisson)
 model_DNA_unrarefied_Demersal <- glm(NumOfSp ~ Zone*Method,
                                      data=DNA_species_unrarefied_Demersal,
                                      family=poisson)
 model_DNA_unrarefied_Demersal_Z <- glm(NumOfSp ~ Zone,
-                                       data=DNA_species_unrarefied_AllFish,
+                                       data=DNA_species_unrarefied_Demersal,
+                                       family=poisson)
+model_DNA_unrarefied_Demersal_M <- glm(NumOfSp ~ Method,
+                                       data=DNA_species_unrarefied_Demersal,
                                        family=poisson)
 
 summary(model_DNA_unrarefied_AllFish)
 summary(model_DNA_unrarefied_Demersal)
 summary(model_DNA_unrarefied_AllFish_Z)
+summary(model_DNA_unrarefied_AllFish_M)
 summary(model_DNA_unrarefied_Demersal_Z)
+summary(model_DNA_unrarefied_Demersal_M)
 
 anova_DNA_unrarefied_AllFish <- Anova(model_DNA_unrarefied_AllFish,
                                       type=2,
@@ -710,16 +723,31 @@ anova_DNA_unrarefied_Demersal_Z <- Anova(model_DNA_unrarefied_Demersal_Z,
                                          type=2,
                                          test = "F")
 anova_DNA_unrarefied_Demersal_Z
+anova_DNA_unrarefied_AllFish_M <- Anova(model_DNA_unrarefied_AllFish_M,
+                                        type=2,
+                                        test = "F")
+anova_DNA_unrarefied_AllFish_M
+anova_DNA_unrarefied_Demersal_M <- Anova(model_DNA_unrarefied_Demersal_M,
+                                         type=2,
+                                         test = "F")
+anova_DNA_unrarefied_Demersal_M
+
 PostHocTest(aov(NumOfSp ~ Zone*Method,
                 data=DNA_species_unrarefied_AllFish),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone,
-                data=DNA_species_unrarefied_Demersal),
+                data=DNA_species_unrarefied_AllFish),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Method,
+                data=DNA_species_unrarefied_AllFish),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone*Method,
                 data=DNA_species_unrarefied_Demersal),
             method = "hsd")
 PostHocTest(aov(NumOfSp ~ Zone,
+                data=DNA_species_unrarefied_Demersal),
+            method = "hsd")
+PostHocTest(aov(NumOfSp ~ Method,
                 data=DNA_species_unrarefied_Demersal),
             method = "hsd")
 
