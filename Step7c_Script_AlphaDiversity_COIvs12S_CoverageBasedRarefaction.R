@@ -379,12 +379,13 @@ p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c(
   #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  labs(y = "Richness")+
   facet_grid(variable~Organism, scales = "free")
 p_all_rarefied_box$layers <- p_all_rarefied_box$layers[-1]
 p_all_rarefied_box$data$Zone <- factor(p_all_rarefied_box$data$Zone, levels=unique(smpl_eDNA_Fish$Zone))
 p_all_rarefied_box
 
-p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c("Observed")) + 
+p_all_rarefied_smooth <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c("Observed")) + 
   #geom_point(aes(color=Method), size = 3) + 
   geom_smooth(method=NULL, aes(color=Method, fill=Method,as.numeric(Zone), value)) +
   scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
@@ -393,9 +394,9 @@ p_all_rarefied_box <- plot_richness(ps_all_rarefied_phylo, x='Zone', measures=c(
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
-p_all_rarefied_box$layers <- p_all_rarefied_box$layers[-1]
-p_all_rarefied_box$data$Zone <- factor(p_all_rarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
-p_all_rarefied_box
+p_all_rarefied_smooth$layers <- p_all_rarefied_smooth$layers[-1]
+p_all_rarefied_smooth$data$Zone <- factor(p_all_rarefied_smooth$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_rarefied_smooth
 
 p_all_rarefied_line <- estimate_richness(ps_all_rarefied_phylo, measures="Observed", split = T)
 p_all_rarefied_line <- cbind(p_all_rarefied_line, ps_all_rarefied_phylo@sam_data)
@@ -504,12 +505,13 @@ p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measure
   #scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "lightblue3", "lightblue4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  labs(y = "Richness")+
   facet_grid(variable~Organism, scales = "free")
 p_all_unrarefied_box$layers <- p_all_unrarefied_box$layers[-1]
 p_all_unrarefied_box$data$Zone <- factor(p_all_unrarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
 p_all_unrarefied_box
 
-p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measures=c("Observed")) + 
+p_all_unrarefied_smooth <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measures=c("Observed")) + 
   #geom_point(aes(color=Method), size = 3) + 
   geom_smooth(method=NULL, aes(color=Method, fill=Method, as.numeric(Zone), value)) +
   scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
@@ -518,9 +520,9 @@ p_all_unrarefied_box <- plot_richness(ps_all_unrarefied_phylo, x='Zone', measure
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
-p_all_unrarefied_box$layers <- p_all_unrarefied_box$layers[-1]
-p_all_unrarefied_box$data$Zone <- factor(p_all_unrarefied_box$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
-p_all_unrarefied_box
+p_all_unrarefied_smooth$layers <- p_all_unrarefied_smooth$layers[-1]
+p_all_unrarefied_smooth$data$Zone <- factor(p_all_unrarefied_smooth$data$Zone, levels=unique(smpl_eDNA_12S$Zone))
+p_all_unrarefied_smooth
 
 p_all_unrarefied_line <- estimate_richness(ps_all_unrarefied_phylo, measures="Observed", split = T)
 p_all_unrarefied_line <- cbind(p_all_unrarefied_line, ps_all_unrarefied_phylo@sam_data)
