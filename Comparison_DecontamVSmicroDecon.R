@@ -106,7 +106,7 @@ p_microDecon <- plot_richness(ps_phylo_microDecon, x='Zone', measures=c("Observe
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   labs(y = "Richness")+
-  facet_grid(~Organism, scales = "free")
+  facet_grid(variable~Organism, scales = "free")
 p_microDecon$layers <- p_microDecon$layers[-1]
 p_microDecon$data$Zone <- factor(p_microDecon$data$Zone, levels=unique(smpl_all$Zone))
 p_microDecon$data$Method <- factor(p_microDecon$data$Method, levels=unique(smpl_all$Method))
