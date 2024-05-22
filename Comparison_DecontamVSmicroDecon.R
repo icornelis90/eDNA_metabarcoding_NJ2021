@@ -85,10 +85,10 @@ colnames(ps_all) <- rownames(smpl_all)
 Taxonomy_all <- as.matrix(rownames(ps_all))
 rownames(Taxonomy_all) <- rownames(ps_all)
 
-ps_all_phylo <- phyloseq(otu_table(ps_all , taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
+ps_all_phylo <- phyloseq(otu_table(ps_all, taxa_are_rows = TRUE), sample_data(smpl_all),tax_table(Taxonomy_all))
 p_all <- plot_richness(ps_all_phylo, x='Zone', measures=c("Observed", "Shannon")) + 
   geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
-  scale_fill_manual(values=c("darkolivegreen3", "darkolivegreen4", "darkolivegreen", "lightblue3", "lightblue4")) +
+  scale_fill_manual(values=c("darkolivegreen3", "lightblue3", "lightblue4", "palevioletred2", "palevioletred4")) +
   scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
   theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
   facet_grid(variable~Organism, scales = "free")
@@ -96,3 +96,18 @@ p_all$layers <- p_all$layers[-1]
 p_all$data$Zone <- factor(p_all$data$Zone, levels=unique(smpl_all$Zone))
 p_all$data$Method <- factor(p_all$data$Method, levels=unique(smpl_all$Method))
 p_all
+
+ps_phylo_microDecon <- phyloseq(otu_table(ps_all[,!grepl("Decontam", colnames(ps_all))], taxa_are_rows = TRUE),
+                                sample_data(smpl_all[!grepl("Decontam", smpl_all$Method),]),
+                                tax_table(Taxonomy_all))
+p_microDecon <- plot_richness(ps_phylo_microDecon, x='Zone', measures=c("Observed")) + 
+  geom_boxplot(outlier.shape = 16, outlier.size = 2, aes(fill=Method)) + 
+  scale_fill_manual(values=c("lightblue3", "lightblue4", "palevioletred2", "palevioletred4"))+
+  scale_x_discrete(labels=c("Coast", "Transition","Offshore")) +
+  theme(axis.text.x=element_text(angle = 0, vjust = 0.5, hjust=0.5, color = c("limegreen","slateblue","darkorange"))) +
+  labs(y = "Richness")+
+  facet_grid(~Organism, scales = "free")
+p_microDecon$layers <- p_microDecon$layers[-1]
+p_microDecon$data$Zone <- factor(p_microDecon$data$Zone, levels=unique(smpl_all$Zone))
+p_microDecon$data$Method <- factor(p_microDecon$data$Method, levels=unique(smpl_all$Method))
+p_microDecon
