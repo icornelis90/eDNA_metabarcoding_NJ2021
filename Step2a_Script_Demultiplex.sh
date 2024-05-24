@@ -102,6 +102,7 @@ sense="$(basename -a -s .R1.fastq.gz "$DIR"/processed-reads/sense/dmplx/*.R1.fas
 # now run
 for i in $sense; do
 cutadapt -n 5 --error-rate 0.15 --action=trim -a "CAAACTRGGATTAGATACCCCACTATG" -A "GCTGGCACGAGWTTTACCRAC" -o "$DIR"/processed-reads/sense/trimmed-R1/"$i"_3.R1.fastq.gz -p "$DIR"/processed-reads/sense/trimmed-R2/"$i"_3.R2.fastq.gz "$DIR"/processed-reads/sense/trimmed5-R1/"$i".R1.fastq.gz "$DIR"/processed-reads/sense/trimmed5-R2/"$i".R2.fastq.gz >> "$DIR"/logs/cutadapt.sense.trimming.complete.log
+#cutadapt -n 5 --error-rate 0.15 --action=trim -a "TGRTTYTTYGGNCAYCCNGARGTNTA" -A "GGRGGRTAWACWGTTCAWCCWGTWCC" -o "$DIR"/processed-reads/sense/trimmed3-R1/"$i".R1.fastq.gz -p "$DIR"/processed-reads/sense/trimmed3-R2/"$i".R2.fastq.gz "$DIR"/processed-reads/sense/dmplx/"$i".R1.fastq.gz "$DIR"/processed-reads/sense/dmplx/"$i".R2.fastq.gz >> "$DIR"/logs/cutadapt.sense.trimming.log
 done
 
 # trim 3' ANTISENSE with cutadapt
@@ -109,6 +110,7 @@ antisense="$(basename -a -s .R1.fastq.gz "$DIR"/processed-reads/antisense/dmplx/
 # now run
 for i in $antisense; do
 cutadapt -n 5 --error-rate 0.15 --action=trim -a "CTGGCACGAGWTTTACCRAC" -A "CAAACTRGGATTAGATACCCCACTATG" -o "$DIR"/processed-reads/antisense/trimmed-R1/"$i"_3.R1.fastq.gz -p "$DIR"/processed-reads/antisense/trimmed-R2/"$i"_3.R2.fastq.gz "$DIR"/processed-reads/antisense/trimmed5-R1/"$i".R1.fastq.gz "$DIR"/processed-reads/antisense/trimmed5-R2/"$i".R2.fastq.gz >> "$DIR"/logs/cutadapt.antisense.trimming.complete.log
+#cutadapt -n 5 --error-rate 0.15 --action=trim -a "GGRGGRTAWACWGTTCAWCCWGTWCC" -A "TGRTTYTTYGGNCAYCCNGARGTNTA" -o "$DIR"/processed-reads/antisense/trimmed3-R1/"$i".R1.fastq.gz -p "$DIR"/processed-reads/antisense/trimmed3-R2/"$i".R2.fastq.gz "$DIR"/processed-reads/antisense/dmplx/"$i".R1.fastq.gz "$DIR"/processed-reads/antisense/dmplx/"$i".R2.fastq.gz >> "$DIR"/logs/cutadapt.antisense.trimming.log
 done
 
 
