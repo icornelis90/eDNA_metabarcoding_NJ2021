@@ -887,7 +887,7 @@ resid_rarefied <- residuals(model_DNA_rarefied_Inv)  # pull the residuals
 hist(resid_rarefied)
 qqnorm(resid_rarefied)
 plot(model_DNA_rarefied_Inv, 2)
-shapiro.test(resid_rarefied)
+ shapiro.test(resid_rarefied)
 
 resid_unrarefied <- residuals(model_DNA_unrarefied_Inv)  # pull the residuals
 hist(resid_unrarefied)
